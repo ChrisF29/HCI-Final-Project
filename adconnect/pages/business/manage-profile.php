@@ -5,6 +5,10 @@ $pageTitle = 'Manage Profile';
 $activePage = '';
 $sidebarRole = 'business';
 $sidebarPage = 'manage-profile';
+$businessId = active_business_profile_id();
+$businessProfile = fetch_business_profile($businessId);
+$categories = fetch_categories_with_counts();
+$selectedCategorySlug = strtolower((string) ($businessProfile['category_slug'] ?? ''));
 
 require_once dirname(__DIR__, 2) . '/includes/header.php';
 require_once dirname(__DIR__, 2) . '/includes/navbar.php';
@@ -31,16 +35,17 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                     <div class="form-grid">
                         <div class="form-field">
                             <label for="business-name">Business Name</label>
-                            <input id="business-name" name="business_name" value="BrightPixel Studio" required>
+                            <input id="business-name" name="business_name" value="<?php echo e((string) ($businessProfile['business_name'] ?? '')); ?>" required>
                             <small class="field-error" data-error-for="business_name"></small>
                         </div>
                         <div class="form-field">
                             <label for="business-category">Category</label>
                             <select id="business-category" name="business_category" required>
-                                <option value="creative">Creative</option>
-                                <option value="digital">Digital</option>
-                                <option value="video">Video</option>
-                                <option value="events">Events</option>
+                                <option value="">Select category</option>
+                                <?php foreach ($categories as $category): ?>
+                                    <?php $slug = strtolower((string) ($category['slug'] ?? '')); ?>
+                                    <option value="<?php echo e($slug); ?>" <?php echo $selectedCategorySlug === $slug ? 'selected' : ''; ?>><?php echo e((string) ($category['name'] ?? 'Category')); ?></option>
+                                <?php endforeach; ?>
                             </select>
                             <small class="field-error" data-error-for="business_category"></small>
                         </div>
@@ -49,12 +54,12 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                     <div class="form-grid">
                         <div class="form-field">
                             <label for="business-email">Contact Email</label>
-                            <input id="business-email" type="email" name="contact_email" value="hello@brightpixel.example" required>
+                            <input id="business-email" type="email" name="contact_email" value="<?php echo e((string) ($businessProfile['contact_email'] ?? '')); ?>" required>
                             <small class="field-error" data-error-for="contact_email"></small>
                         </div>
                         <div class="form-field">
                             <label for="business-phone">Phone</label>
-                            <input id="business-phone" name="contact_phone" value="09179876543" required>
+                            <input id="business-phone" name="contact_phone" value="<?php echo e((string) ($businessProfile['contact_phone'] ?? '')); ?>" required>
                             <small class="field-error" data-error-for="contact_phone"></small>
                         </div>
                     </div>
@@ -62,7 +67,7 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                     <div class="form-grid full">
                         <div class="form-field">
                             <label for="business-description">Description</label>
-                            <textarea id="business-description" name="business_description" required data-minlength="20">Creative campaigns for startups and enterprise brands.</textarea>
+                            <textarea id="business-description" name="business_description" required data-minlength="20"><?php echo e((string) ($businessProfile['description'] ?? '')); ?></textarea>
                             <small class="field-error" data-error-for="business_description"></small>
                         </div>
                     </div>

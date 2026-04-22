@@ -5,6 +5,8 @@ $pageTitle = 'Inquiries';
 $activePage = '';
 $sidebarRole = 'business';
 $sidebarPage = 'inquiries';
+$businessId = active_business_profile_id();
+$inquiries = fetch_inquiries_for_business($businessId, 200);
 
 require_once dirname(__DIR__, 2) . '/includes/header.php';
 require_once dirname(__DIR__, 2) . '/includes/navbar.php';
@@ -40,9 +42,19 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                         </tr>
                     </thead>
                     <tbody>
-                        <tr><td>Alex Santos</td><td>Product launch ads</td><td>PHP 150K</td><td><span class="badge badge-warning">Pending</span></td></tr>
-                        <tr><td>Luna Retail</td><td>Holiday awareness</td><td>PHP 95K</td><td><span class="badge badge-success">Replied</span></td></tr>
-                        <tr><td>Flow Apps</td><td>Search performance</td><td>PHP 200K</td><td><span class="badge badge-neutral">Scheduled</span></td></tr>
+                        <?php foreach ($inquiries as $inquiry): ?>
+                            <tr>
+                                <td><?php echo e((string) ($inquiry['client_name'] ?? 'Client')); ?></td>
+                                <td><?php echo e((string) ($inquiry['campaign_need'] ?? 'Campaign request')); ?></td>
+                                <td><?php echo e(money((float) ($inquiry['budget_amount'] ?? 0))); ?></td>
+                                <td><span class="badge <?php echo e(badge_class_for_status((string) ($inquiry['status'] ?? '')); ?>"><?php echo e(ucfirst((string) ($inquiry['status'] ?? 'pending'))); ?></span></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        <?php if (empty($inquiries)): ?>
+                            <tr>
+                                <td colspan="4">No inquiries found.</td>
+                            </tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </section>

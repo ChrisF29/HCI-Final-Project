@@ -3,6 +3,9 @@ require_once dirname(__DIR__) . '/includes/config.php';
 
 $pageTitle = 'Home';
 $activePage = 'home';
+$clientUserId = active_client_user_id();
+$featuredListings = fetch_business_listings(8, $clientUserId, false);
+$trendingAds = fetch_ads_feed(8);
 
 require_once dirname(__DIR__) . '/includes/header.php';
 require_once dirname(__DIR__) . '/includes/navbar.php';
@@ -33,8 +36,12 @@ require_once dirname(__DIR__) . '/includes/navbar.php';
                 <input type="search" data-search-input placeholder="Search by category, city, or skill">
                 <a class="btn-ghost" href="<?php echo e(url('pages/directory.php')); ?>">Advanced Filters</a>
             </div>
-            <div class="card-grid" data-feed="listings"></div>
-            <div class="empty-state is-hidden" data-empty-state>
+            <div class="card-grid">
+                <?php foreach ($featuredListings as $listing): ?>
+                    <?php echo render_listing_card($listing); ?>
+                <?php endforeach; ?>
+            </div>
+            <div class="empty-state <?php echo !empty($featuredListings) ? 'is-hidden' : ''; ?>" data-empty-state>
                 <p>No businesses matched your search term.</p>
             </div>
         </section>
@@ -61,8 +68,12 @@ require_once dirname(__DIR__) . '/includes/navbar.php';
                 </select>
                 <button class="btn-ghost" type="button" data-filter-reset>Reset</button>
             </div>
-            <div class="card-grid" data-feed="ads"></div>
-            <div class="empty-state is-hidden" data-filter-empty data-empty-state>
+            <div class="card-grid">
+                <?php foreach ($trendingAds as $ad): ?>
+                    <?php echo render_ad_card($ad); ?>
+                <?php endforeach; ?>
+            </div>
+            <div class="empty-state <?php echo !empty($trendingAds) ? 'is-hidden' : ''; ?>" data-filter-empty data-empty-state>
                 <p>No campaigns matched your filters.</p>
             </div>
         </section>

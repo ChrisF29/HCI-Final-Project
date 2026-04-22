@@ -2,7 +2,7 @@
     <div class="container footer-grid">
         <section>
             <h3>AdConnect</h3>
-            <p>Frontend-ready architecture for future PHP and MySQL integration.</p>
+            <p>Database-backed platform for client-business advertising collaboration.</p>
         </section>
 
         <section>
@@ -28,7 +28,7 @@
         </section>
     </div>
     <div class="container footer-base">
-        <small>&copy; <?php echo date('Y'); ?> AdConnect. Built with scalable frontend architecture.</small>
+        <small>&copy; <?php echo date('Y'); ?> AdConnect. Built with scalable PHP and MySQL architecture.</small>
     </div>
 </footer>
 

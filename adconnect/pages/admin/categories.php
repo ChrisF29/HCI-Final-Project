@@ -5,6 +5,7 @@ $pageTitle = 'Categories';
 $activePage = '';
 $sidebarRole = 'admin';
 $sidebarPage = 'categories';
+$categories = fetch_categories_with_counts();
 
 require_once dirname(__DIR__, 2) . '/includes/header.php';
 require_once dirname(__DIR__, 2) . '/includes/navbar.php';
@@ -55,10 +56,18 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                         </tr>
                     </thead>
                     <tbody>
-                        <tr><td>Creative</td><td>creative</td><td>112</td></tr>
-                        <tr><td>Digital</td><td>digital</td><td>94</td></tr>
-                        <tr><td>Video</td><td>video</td><td>61</td></tr>
-                        <tr><td>Events</td><td>events</td><td>47</td></tr>
+                        <?php foreach ($categories as $category): ?>
+                            <tr>
+                                <td><?php echo e((string) ($category['name'] ?? 'Category')); ?></td>
+                                <td><?php echo e((string) ($category['slug'] ?? '')); ?></td>
+                                <td><?php echo e((string) ($category['active_listings'] ?? '0')); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        <?php if (empty($categories)): ?>
+                            <tr>
+                                <td colspan="3">No categories configured yet.</td>
+                            </tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </section>

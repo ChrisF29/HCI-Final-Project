@@ -5,6 +5,10 @@ $pageTitle = 'Client Dashboard';
 $activePage = '';
 $sidebarRole = 'user';
 $sidebarPage = 'dashboard';
+$clientUserId = active_client_user_id();
+$clientMetrics = fetch_dashboard_metrics_client($clientUserId);
+$clientNotifications = fetch_notifications('client', $clientUserId, 8);
+$recommendedListings = fetch_business_listings(8, $clientUserId, false);
 
 require_once dirname(__DIR__, 2) . '/includes/header.php';
 require_once dirname(__DIR__, 2) . '/includes/navbar.php';
@@ -26,17 +30,17 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
             </section>
 
             <section class="metrics">
-                <article class="metric-card"><small>Saved Businesses</small><strong data-counter="18">0</strong></article>
-                <article class="metric-card"><small>Open Inquiries</small><strong data-counter="6">0</strong></article>
-                <article class="metric-card"><small>Unread Messages</small><strong data-counter="12">0</strong></article>
-                <article class="metric-card"><small>Average Response Time</small><strong>3.2h</strong></article>
+                <article class="metric-card"><small>Saved Businesses</small><strong data-counter="<?php echo e((string) ($clientMetrics['saved_businesses'] ?? 0)); ?>">0</strong></article>
+                <article class="metric-card"><small>Open Inquiries</small><strong data-counter="<?php echo e((string) ($clientMetrics['open_inquiries'] ?? 0)); ?>">0</strong></article>
+                <article class="metric-card"><small>Unread Messages</small><strong data-counter="<?php echo e((string) ($clientMetrics['unread_messages'] ?? 0)); ?>">0</strong></article>
+                <article class="metric-card"><small>Average Response Time</small><strong><?php echo e((float) ($clientMetrics['average_response_hours'] ?? 0) > 0 ? number_format((float) $clientMetrics['average_response_hours'], 1) . 'h' : 'N/A'); ?></strong></article>
             </section>
 
             <section class="card progress-wrap">
                 <h3>Pipeline Progress</h3>
-                <div class="progress-line"><small>Discovery Stage</small><div class="meter" data-meter="78"><span></span></div></div>
-                <div class="progress-line"><small>Ongoing Campaigns</small><div class="meter" data-meter="52"><span></span></div></div>
-                <div class="progress-line"><small>Completed Negotiations</small><div class="meter" data-meter="64"><span></span></div></div>
+                <div class="progress-line"><small>Discovery Stage</small><div class="meter" data-meter="<?php echo e((string) ($clientMetrics['discovery_stage'] ?? 0)); ?>"><span></span></div></div>
+                <div class="progress-line"><small>Ongoing Campaigns</small><div class="meter" data-meter="<?php echo e((string) ($clientMetrics['ongoing_campaigns'] ?? 0)); ?>"><span></span></div></div>
+                <div class="progress-line"><small>Completed Negotiations</small><div class="meter" data-meter="<?php echo e((string) ($clientMetrics['completed_negotiations'] ?? 0)); ?>"><span></span></div></div>
             </section>
 
             <section class="tabs" data-tabs>
@@ -46,13 +50,27 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                     <button type="button" data-tab-target="alerts">Alerts</button>
                 </div>
                 <article class="tab-panel is-active" data-tab-panel="updates">
-                    <div class="notice-list" data-feed="notifications"></div>
+                    <div class="notice-list">
+                        <?php foreach ($clientNotifications as $notification): ?>
+                            <?php echo render_notification_item($notification); ?>
+                        <?php endforeach; ?>
+                        <?php if (empty($clientNotifications)): ?>
+                            <article class="notice-item">No updates available right now.</article>
+                        <?php endif; ?>
+                    </div>
                 </article>
                 <article class="tab-panel" data-tab-panel="recommended">
-                    <div class="card-grid" data-feed="listings"></div>
+                    <div class="card-grid">
+                        <?php foreach ($recommendedListings as $listing): ?>
+                            <?php echo render_listing_card($listing); ?>
+                        <?php endforeach; ?>
+                        <?php if (empty($recommendedListings)): ?>
+                            <article class="card"><p>No recommended businesses yet.</p></article>
+                        <?php endif; ?>
+                    </div>
                 </article>
                 <article class="tab-panel" data-tab-panel="alerts">
-                    <p class="card">Role-aware alerts appear here. Future backend logic can push real message and status updates.</p>
+                    <p class="card">Alerts are generated from inquiry and messaging status updates in your account.</p>
                 </article>
             </section>
         </div>

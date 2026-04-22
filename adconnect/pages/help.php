@@ -16,7 +16,7 @@ require_once dirname(__DIR__) . '/includes/navbar.php';
                 <span>Help Center</span>
             </nav>
             <h1>Need help with AdConnect?</h1>
-            <p>Find quick answers, browse platform guides, and submit support requests. All forms are prepared for future PHP POST processing.</p>
+            <p>Find quick answers, browse platform guides, and submit support requests.</p>
         </section>
 
         <section class="tabs" data-tabs>
@@ -29,8 +29,8 @@ require_once dirname(__DIR__) . '/includes/navbar.php';
             <article class="tab-panel is-active" data-tab-panel="faq">
                 <div class="notice-list">
                     <article class="notice-item"><strong>How do I switch roles?</strong><p>Use portal links in the top navigation to simulate client, business, or admin views.</p></article>
-                    <article class="notice-item"><strong>Are listings real-time?</strong><p>Current data is static and ready to be replaced with backend responses later.</p></article>
-                    <article class="notice-item"><strong>Can I submit ads now?</strong><p>Yes, through simulated forms that validate inputs on the front-end.</p></article>
+                    <article class="notice-item"><strong>Are listings real-time?</strong><p>Listings and campaigns are loaded from the platform database and update as records change.</p></article>
+                    <article class="notice-item"><strong>Can I submit ads now?</strong><p>Yes. Ads are captured through validated forms and stored for moderation workflow.</p></article>
                 </div>
             </article>
 

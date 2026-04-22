@@ -5,6 +5,7 @@ $pageTitle = 'Users';
 $activePage = '';
 $sidebarRole = 'admin';
 $sidebarPage = 'users';
+$users = fetch_admin_users(200);
 
 require_once dirname(__DIR__, 2) . '/includes/header.php';
 require_once dirname(__DIR__, 2) . '/includes/navbar.php';
@@ -23,7 +24,7 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                     <span>Users</span>
                 </nav>
                 <h1>User management</h1>
-                <p>Review account status and role assignments before backend integration.</p>
+                <p>Review account status and role assignments.</p>
             </section>
 
             <section class="table-wrap">
@@ -37,9 +38,20 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                         </tr>
                     </thead>
                     <tbody>
-                        <tr><td>Alex Santos</td><td>alex@example.com</td><td>Client</td><td><span class="badge badge-success">Active</span></td></tr>
-                        <tr><td>BrightPixel Studio</td><td>hello@brightpixel.example</td><td>Business</td><td><span class="badge badge-warning">Pending</span></td></tr>
-                        <tr><td>Maria Delos Reyes</td><td>maria@agency.example</td><td>Admin</td><td><span class="badge badge-neutral">Verified</span></td></tr>
+                        <?php foreach ($users as $user): ?>
+                            <?php $statusLabel = ucfirst((string) ($user['status'] ?? 'unknown')); ?>
+                            <tr>
+                                <td><?php echo e((string) ($user['full_name'] ?? 'User')); ?></td>
+                                <td><?php echo e((string) ($user['email'] ?? '')); ?></td>
+                                <td><?php echo e(ucfirst((string) ($user['role'] ?? 'client'))); ?></td>
+                                <td><span class="badge <?php echo e(badge_class_for_status((string) ($user['status'] ?? ''))); ?>"><?php echo e($statusLabel); ?></span></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        <?php if (empty($users)): ?>
+                            <tr>
+                                <td colspan="4">No user records found.</td>
+                            </tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </section>

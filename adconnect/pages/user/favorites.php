@@ -5,6 +5,18 @@ $pageTitle = 'Favorites';
 $activePage = '';
 $sidebarRole = 'user';
 $sidebarPage = 'favorites';
+$clientUserId = active_client_user_id();
+$favoriteListings = fetch_business_listings(60, $clientUserId, true);
+
+$favoriteCategories = [];
+foreach ($favoriteListings as $listing) {
+    $categorySlug = strtolower((string) ($listing['category_slug'] ?? ''));
+    $categoryName = (string) ($listing['category_name'] ?? 'Category');
+    if ($categorySlug !== '') {
+        $favoriteCategories[$categorySlug] = $categoryName;
+    }
+}
+ksort($favoriteCategories);
 
 require_once dirname(__DIR__, 2) . '/includes/header.php';
 require_once dirname(__DIR__, 2) . '/includes/navbar.php';
@@ -31,16 +43,19 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                     <input type="search" data-search-input placeholder="Search saved businesses">
                     <select name="category" data-filter-select>
                         <option value="all">All Categories</option>
-                        <option value="creative">Creative</option>
-                        <option value="digital">Digital</option>
-                        <option value="video">Video</option>
-                        <option value="events">Events</option>
+                        <?php foreach ($favoriteCategories as $categorySlug => $categoryName): ?>
+                            <option value="<?php echo e($categorySlug); ?>"><?php echo e($categoryName); ?></option>
+                        <?php endforeach; ?>
                     </select>
                     <button class="btn-ghost" type="button" data-filter-reset>Clear</button>
                 </div>
                 <p><strong><span data-filter-count>0</span></strong> items found.</p>
-                <div class="card-grid" data-feed="listings"></div>
-                <div class="empty-state is-hidden" data-filter-empty data-empty-state>
+                <div class="card-grid">
+                    <?php foreach ($favoriteListings as $listing): ?>
+                        <?php echo render_listing_card($listing); ?>
+                    <?php endforeach; ?>
+                </div>
+                <div class="empty-state <?php echo !empty($favoriteListings) ? 'is-hidden' : ''; ?>" data-filter-empty data-empty-state>
                     <p>No favorites matched your current filters.</p>
                 </div>
             </section>

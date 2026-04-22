@@ -5,6 +5,7 @@ $pageTitle = 'Ads Moderation';
 $activePage = '';
 $sidebarRole = 'admin';
 $sidebarPage = 'ads-moderation';
+$moderationAds = fetch_ads_feed(80);
 
 require_once dirname(__DIR__, 2) . '/includes/header.php';
 require_once dirname(__DIR__, 2) . '/includes/navbar.php';
@@ -38,8 +39,12 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                     <button class="btn-ghost" type="button" data-filter-reset>Reset</button>
                 </div>
                 <p><strong><span data-filter-count>0</span></strong> ads in current view.</p>
-                <div class="card-grid" data-feed="ads"></div>
-                <div class="empty-state is-hidden" data-filter-empty data-empty-state>
+                <div class="card-grid">
+                    <?php foreach ($moderationAds as $ad): ?>
+                        <?php echo render_ad_card($ad); ?>
+                    <?php endforeach; ?>
+                </div>
+                <div class="empty-state <?php echo !empty($moderationAds) ? 'is-hidden' : ''; ?>" data-filter-empty data-empty-state>
                     <p>No moderation entries match your filters.</p>
                 </div>
             </section>

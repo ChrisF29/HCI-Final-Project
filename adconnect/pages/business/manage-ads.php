@@ -5,6 +5,8 @@ $pageTitle = 'Manage Ads';
 $activePage = '';
 $sidebarRole = 'business';
 $sidebarPage = 'manage-ads';
+$businessId = active_business_profile_id();
+$businessAds = fetch_ads_feed(60, $businessId);
 
 require_once dirname(__DIR__, 2) . '/includes/header.php';
 require_once dirname(__DIR__, 2) . '/includes/navbar.php';
@@ -91,8 +93,12 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                     <button class="btn-ghost" type="button" data-filter-reset>Reset</button>
                 </div>
                 <p><strong><span data-filter-count>0</span></strong> ads displayed.</p>
-                <div class="card-grid" data-feed="ads"></div>
-                <div class="empty-state is-hidden" data-filter-empty data-empty-state>
+                <div class="card-grid">
+                    <?php foreach ($businessAds as $ad): ?>
+                        <?php echo render_ad_card($ad); ?>
+                    <?php endforeach; ?>
+                </div>
+                <div class="empty-state <?php echo !empty($businessAds) ? 'is-hidden' : ''; ?>" data-filter-empty data-empty-state>
                     <p>No ad matched your search or status filter.</p>
                 </div>
             </section>

@@ -3,6 +3,14 @@ require_once dirname(__DIR__) . '/includes/config.php';
 
 $pageTitle = 'Ads Feed';
 $activePage = 'ads';
+$campaignAds = fetch_ads_feed(50);
+$liveCampaignCount = 0;
+
+foreach ($campaignAds as $campaignAd) {
+    if (($campaignAd['status'] ?? '') === 'live') {
+        $liveCampaignCount += 1;
+    }
+}
 
 require_once dirname(__DIR__) . '/includes/header.php';
 require_once dirname(__DIR__) . '/includes/navbar.php';
@@ -15,8 +23,8 @@ require_once dirname(__DIR__) . '/includes/navbar.php';
                 <span>/</span>
                 <span>Ads Feed</span>
             </nav>
-            <h1>Campaign feed with simulated moderation states</h1>
-            <p>Preview advertisement cards, filter channels, and test role-based visibility before backend integration with PHP and MySQL.</p>
+            <h1>Campaign feed and moderation states</h1>
+            <p>Browse current campaigns, filter by channel and status, and review publication readiness.</p>
         </section>
 
         <section class="tabs" data-tabs>
@@ -46,19 +54,23 @@ require_once dirname(__DIR__) . '/includes/navbar.php';
                         <button class="btn-ghost" type="button" data-filter-reset>Reset</button>
                     </div>
                     <p><strong><span data-filter-count>0</span></strong> campaigns currently visible.</p>
-                    <div class="card-grid" data-feed="ads"></div>
-                    <div class="empty-state is-hidden" data-filter-empty data-empty-state>
+                    <div class="card-grid">
+                        <?php foreach ($campaignAds as $ad): ?>
+                            <?php echo render_ad_card($ad); ?>
+                        <?php endforeach; ?>
+                    </div>
+                    <div class="empty-state <?php echo !empty($campaignAds) ? 'is-hidden' : ''; ?>" data-filter-empty data-empty-state>
                         <p>No campaigns match your current criteria.</p>
                     </div>
                 </section>
             </article>
 
             <article class="tab-panel" data-tab-panel="ads-live">
-                <p>Live campaigns should prioritize clear CTA language, honest claims, and audience fit. Once backend is connected, this tab can fetch live-only items from the database.</p>
+                <p><?php echo e((string) $liveCampaignCount); ?> live campaign(s) are active. Prioritize clear CTA language, honest claims, and audience fit for top approval rates.</p>
             </article>
 
             <article class="tab-panel" data-tab-panel="ads-safety">
-                <p>Moderation placeholders are included for review states, role-based actions, and content policy checks in future admin workflows.</p>
+                <p>Moderation status is managed through the campaign records and can be reviewed in the admin moderation queue.</p>
             </article>
         </section>
     </div>

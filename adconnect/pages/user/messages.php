@@ -5,6 +5,9 @@ $pageTitle = 'Messages';
 $activePage = '';
 $sidebarRole = 'user';
 $sidebarPage = 'messages';
+$clientUserId = active_client_user_id();
+$messages = fetch_messages_for_client($clientUserId, 200);
+$recipientBusinesses = fetch_business_listings(100, $clientUserId, false);
 
 require_once dirname(__DIR__, 2) . '/includes/header.php';
 require_once dirname(__DIR__, 2) . '/includes/navbar.php';
@@ -37,9 +40,20 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                         </tr>
                     </thead>
                     <tbody>
-                        <tr><td>BrightPixel Studio</td><td>Campaign discovery call</td><td><span class="badge badge-success">Open</span></td><td>2h ago</td></tr>
-                        <tr><td>MetroReach Media</td><td>Budget clarification</td><td><span class="badge badge-warning">Pending</span></td><td>Today</td></tr>
-                        <tr><td>Northlight Productions</td><td>Creative samples</td><td><span class="badge badge-neutral">Reviewed</span></td><td>Yesterday</td></tr>
+                        <?php foreach ($messages as $message): ?>
+                            <?php $messageStatus = (string) ($message['message_status'] ?? 'open'); ?>
+                            <tr>
+                                <td><?php echo e((string) ($message['business_name'] ?? 'Business')); ?></td>
+                                <td><?php echo e((string) ($message['subject'] ?? 'No subject')); ?></td>
+                                <td><span class="badge <?php echo e(badge_class_for_status($messageStatus)); ?>"><?php echo e(ucfirst($messageStatus)); ?></span></td>
+                                <td><?php echo e(relative_time((string) ($message['created_at'] ?? ''))); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        <?php if (empty($messages)): ?>
+                            <tr>
+                                <td colspan="4">No messages found.</td>
+                            </tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </section>
@@ -52,9 +66,9 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                             <label for="msg-recipient">Recipient</label>
                             <select id="msg-recipient" name="recipient" required>
                                 <option value="">Choose business</option>
-                                <option value="brightpixel">BrightPixel Studio</option>
-                                <option value="metroreach">MetroReach Media</option>
-                                <option value="northlight">Northlight Productions</option>
+                                <?php foreach ($recipientBusinesses as $business): ?>
+                                    <option value="<?php echo e((string) ($business['id'] ?? '')); ?>"><?php echo e((string) ($business['business_name'] ?? 'Business')); ?></option>
+                                <?php endforeach; ?>
                             </select>
                             <small class="field-error" data-error-for="recipient"></small>
                         </div>

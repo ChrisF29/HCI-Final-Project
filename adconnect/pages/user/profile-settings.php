@@ -5,6 +5,13 @@ $pageTitle = 'Profile Settings';
 $activePage = '';
 $sidebarRole = 'user';
 $sidebarPage = 'profile-settings';
+$clientUserId = active_client_user_id();
+$profile = $clientUserId !== null
+    ? db_one(
+        'SELECT first_name, last_name, email, phone_number, notify_email FROM users WHERE id = :client_user_id LIMIT 1',
+        ['client_user_id' => $clientUserId]
+    )
+    : null;
 
 require_once dirname(__DIR__, 2) . '/includes/header.php';
 require_once dirname(__DIR__, 2) . '/includes/navbar.php';
@@ -31,12 +38,12 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                     <div class="form-grid">
                         <div class="form-field">
                             <label for="settings-first-name">First Name</label>
-                            <input id="settings-first-name" name="first_name" value="Alex" required>
+                            <input id="settings-first-name" name="first_name" value="<?php echo e((string) ($profile['first_name'] ?? '')); ?>" required>
                             <small class="field-error" data-error-for="first_name"></small>
                         </div>
                         <div class="form-field">
                             <label for="settings-last-name">Last Name</label>
-                            <input id="settings-last-name" name="last_name" value="Santos" required>
+                            <input id="settings-last-name" name="last_name" value="<?php echo e((string) ($profile['last_name'] ?? '')); ?>" required>
                             <small class="field-error" data-error-for="last_name"></small>
                         </div>
                     </div>
@@ -44,12 +51,12 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                     <div class="form-grid">
                         <div class="form-field">
                             <label for="settings-email">Email Address</label>
-                            <input id="settings-email" type="email" name="email" value="alex@example.com" required>
+                            <input id="settings-email" type="email" name="email" value="<?php echo e((string) ($profile['email'] ?? '')); ?>" required>
                             <small class="field-error" data-error-for="email"></small>
                         </div>
                         <div class="form-field">
                             <label for="settings-phone">Phone Number</label>
-                            <input id="settings-phone" name="phone_number" value="09171234567" required>
+                            <input id="settings-phone" name="phone_number" value="<?php echo e((string) ($profile['phone_number'] ?? '')); ?>" required>
                             <small class="field-error" data-error-for="phone_number"></small>
                         </div>
                     </div>
@@ -62,7 +69,7 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                         </div>
                     </div>
 
-                    <label><input type="checkbox" name="notify_email" checked> Receive campaign updates by email</label>
+                    <label><input type="checkbox" name="notify_email" <?php echo !empty($profile['notify_email']) ? 'checked' : ''; ?>> Receive campaign updates by email</label>
                     <button class="btn" type="submit">Save Changes</button>
                 </form>
             </section>

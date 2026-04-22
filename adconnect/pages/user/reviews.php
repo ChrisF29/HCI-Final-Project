@@ -5,6 +5,9 @@ $pageTitle = 'Reviews';
 $activePage = '';
 $sidebarRole = 'user';
 $sidebarPage = 'reviews';
+$clientUserId = active_client_user_id();
+$reviews = fetch_reviews_for_client($clientUserId, 200);
+$reviewableBusinesses = fetch_business_listings(100, $clientUserId, false);
 
 require_once dirname(__DIR__, 2) . '/includes/header.php';
 require_once dirname(__DIR__, 2) . '/includes/navbar.php';
@@ -40,9 +43,19 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                         </tr>
                     </thead>
                     <tbody>
-                        <tr><td>BrightPixel Studio</td><td>5/5</td><td>Excellent strategic support and clear updates.</td><td>Apr 8, 2026</td></tr>
-                        <tr><td>Community Buzz PH</td><td>4/5</td><td>Great on-ground activation and budget control.</td><td>Mar 27, 2026</td></tr>
-                        <tr><td>MetroReach Media</td><td>4/5</td><td>Good performance outcomes in search campaigns.</td><td>Mar 10, 2026</td></tr>
+                        <?php foreach ($reviews as $review): ?>
+                            <tr>
+                                <td><?php echo e((string) ($review['business_name'] ?? 'Business')); ?></td>
+                                <td><?php echo e((string) ((int) ($review['rating'] ?? 0))); ?>/5</td>
+                                <td><?php echo e((string) ($review['comment'] ?? '')); ?></td>
+                                <td><?php echo e(format_date_label((string) ($review['created_at'] ?? ''))); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        <?php if (empty($reviews)): ?>
+                            <tr>
+                                <td colspan="4">No reviews published yet.</td>
+                            </tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </section>
@@ -62,9 +75,9 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                     <label for="review-business">Business</label>
                     <select id="review-business" name="review_business" required>
                         <option value="">Select business</option>
-                        <option value="brightpixel">BrightPixel Studio</option>
-                        <option value="metroreach">MetroReach Media</option>
-                        <option value="northlight">Northlight Productions</option>
+                            <?php foreach ($reviewableBusinesses as $business): ?>
+                                <option value="<?php echo e((string) ($business['id'] ?? '')); ?>"><?php echo e((string) ($business['business_name'] ?? 'Business')); ?></option>
+                            <?php endforeach; ?>
                     </select>
                     <small class="field-error" data-error-for="review_business"></small>
                 </div>

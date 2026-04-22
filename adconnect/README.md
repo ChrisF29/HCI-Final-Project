@@ -1,13 +1,14 @@
-# AdConnect Frontend Scaffold
+# AdConnect PHP + MySQL Platform
 
-AdConnect is a fully responsive, backend-ready front-end web platform for advertising and client matching.
+AdConnect is a role-based advertising and client-matching web platform powered by PHP and MySQL.
 
 ## Tech Stack
 
 - HTML5 (rendered via PHP pages)
 - CSS3
 - Vanilla JavaScript
-- Backend-ready structure for PHP + MySQL
+- PHP server-rendered pages with shared includes
+- MySQL schema in `database/schema.sql`
 
 ## Folder Structure
 
@@ -50,30 +51,30 @@ AdConnect is a fully responsive, backend-ready front-end web platform for advert
 ## Features Included
 
 - Shared reusable PHP includes (header, navbar, footer, sidebar)
-- Breadcrumb hierarchy across pages
-- Search and filtering simulation with static data
-- Dynamic-looking listings and ads feed using JavaScript arrays
-- Role-based UI visibility simulation (client, business, admin)
+- Database-backed listings, ads, dashboard metrics, and tables
+- Role-aware sections for client, business, and admin pages
+- Search/filter UI using server-rendered record cards
 - Modal popups, tab interfaces, and toast notifications
-- Client, business, admin dashboard sections with sidebar navigation
 - Front-end form validation for auth, inquiry, and ad management forms
 
-## Backend Preparation Notes
+## Database Schema
 
-- All pages use `.php` for straightforward server-side integration
-- Forms use `method="POST"`, proper `name` attributes, and `action="#"` placeholders
-- `includes/config.php` includes placeholders for future MySQL/PDO setup
-- Validation and sanitization placeholders are provided for secure expansion
+- File: `database/schema.sql`
+- Covers users, business profiles, categories, specialties, campaigns, ads, inquiries, messages, favorites, reviews, reports, notifications, analytics, and support requests.
+- No sample seed rows are included.
 
 ## Run Locally (XAMPP)
 
 1. Place the project in `htdocs`.
 2. Start Apache in XAMPP.
-3. Open: `http://localhost/HCI-Final-Project/adconnect/`
+3. Create/import the database schema:
+	- Open phpMyAdmin
+	- Import `adconnect/database/schema.sql`
+4. Open: `http://localhost/HCI-Final-Project/adconnect/`
 
 ## Next Backend Steps
 
-- Replace static arrays in `assets/js/main.js` with PHP + MySQL data sources
 - Implement authentication and role authorization middleware
-- Connect inquiry/message/review forms to database tables
-- Add CSRF tokens, server-side validation, and prepared statements
+- Wire all form submissions (`action="#"`) to insert/update handlers
+- Add CSRF tokens and stricter server-side validation rules
+- Add pagination and role-scoped data policies for production usage

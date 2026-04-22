@@ -5,6 +5,7 @@ $pageTitle = 'Approvals';
 $activePage = '';
 $sidebarRole = 'admin';
 $sidebarPage = 'approvals';
+$pendingApprovals = fetch_pending_approvals(200);
 
 require_once dirname(__DIR__, 2) . '/includes/header.php';
 require_once dirname(__DIR__, 2) . '/includes/navbar.php';
@@ -37,9 +38,19 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                         </tr>
                     </thead>
                     <tbody>
-                        <tr><td>Nova Media Lab</td><td>Digital</td><td>Apr 14, 2026</td><td><button class="btn-ghost" type="button" data-notify="Approval action simulated.">Approve</button></td></tr>
-                        <tr><td>Urban Reach</td><td>Events</td><td>Apr 13, 2026</td><td><button class="btn-ghost" type="button" data-notify="Approval action simulated.">Review</button></td></tr>
-                        <tr><td>SceneCraft PH</td><td>Video</td><td>Apr 12, 2026</td><td><button class="btn-ghost" type="button" data-notify="Approval action simulated.">Approve</button></td></tr>
+                        <?php foreach ($pendingApprovals as $approval): ?>
+                            <tr>
+                                <td><?php echo e((string) ($approval['business_name'] ?? 'Business')); ?></td>
+                                <td><?php echo e((string) ($approval['category_name'] ?? 'Uncategorized')); ?></td>
+                                <td><?php echo e(format_date_label((string) ($approval['created_at'] ?? ''))); ?></td>
+                                <td><button class="btn-ghost" type="button" data-notify="Approval workflow will be connected to update endpoints.">Review</button></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        <?php if (empty($pendingApprovals)): ?>
+                            <tr>
+                                <td colspan="4">No pending approvals at the moment.</td>
+                            </tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </section>

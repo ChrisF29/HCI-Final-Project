@@ -5,6 +5,8 @@ $pageTitle = 'Campaigns';
 $activePage = '';
 $sidebarRole = 'business';
 $sidebarPage = 'campaigns';
+$businessId = active_business_profile_id();
+$campaigns = fetch_business_campaigns($businessId, 60);
 
 require_once dirname(__DIR__, 2) . '/includes/header.php';
 require_once dirname(__DIR__, 2) . '/includes/navbar.php';
@@ -27,18 +29,24 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
             </section>
 
             <section class="card-grid">
-                <article class="card">
-                    <div class="card-top"><h3>Summer Push 2026</h3><span class="badge badge-success">Active</span></div>
-                    <p>Owner: Growth Team · Spend: PHP 120,000</p>
-                </article>
-                <article class="card">
-                    <div class="card-top"><h3>Back-to-School Promo</h3><span class="badge badge-warning">Review</span></div>
-                    <p>Owner: Performance Team · Spend: PHP 80,000</p>
-                </article>
-                <article class="card">
-                    <div class="card-top"><h3>Holiday Launch</h3><span class="badge badge-neutral">Planned</span></div>
-                    <p>Owner: Creative Team · Spend: PHP 200,000</p>
-                </article>
+                <?php foreach ($campaigns as $campaign): ?>
+                    <?php $statusLabel = ucfirst((string) ($campaign['status'] ?? 'planned')); ?>
+                    <article class="card">
+                        <div class="card-top">
+                            <h3><?php echo e((string) ($campaign['name'] ?? 'Campaign')); ?></h3>
+                            <span class="badge <?php echo e(badge_class_for_status((string) ($campaign['status'] ?? '')); ?>"><?php echo e($statusLabel); ?></span>
+                        </div>
+                        <p>
+                            Owner: <?php echo e((string) ($campaign['owner_name'] ?? 'Unassigned')); ?>
+                            · Spend: <?php echo e(money((float) ($campaign['budget_amount'] ?? 0))); ?>
+                        </p>
+                    </article>
+                <?php endforeach; ?>
+                <?php if (empty($campaigns)): ?>
+                    <article class="card">
+                        <p>No campaigns found. Create your first campaign below.</p>
+                    </article>
+                <?php endif; ?>
             </section>
 
             <section class="card section-stack">

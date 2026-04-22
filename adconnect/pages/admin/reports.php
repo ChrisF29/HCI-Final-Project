@@ -5,6 +5,7 @@ $pageTitle = 'Reports';
 $activePage = '';
 $sidebarRole = 'admin';
 $sidebarPage = 'reports';
+$incidentReports = fetch_reports(200);
 
 require_once dirname(__DIR__, 2) . '/includes/header.php';
 require_once dirname(__DIR__, 2) . '/includes/navbar.php';
@@ -37,9 +38,20 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                         </tr>
                     </thead>
                     <tbody>
-                        <tr><td>REP-2026-0411</td><td>Misleading ad copy</td><td>Client user</td><td><span class="badge badge-warning">Open</span></td></tr>
-                        <tr><td>REP-2026-0408</td><td>Spam inquiry</td><td>Business user</td><td><span class="badge badge-success">Resolved</span></td></tr>
-                        <tr><td>REP-2026-0404</td><td>Profile impersonation</td><td>Admin</td><td><span class="badge badge-neutral">Investigating</span></td></tr>
+                        <?php foreach ($incidentReports as $report): ?>
+                            <?php $statusLabel = ucfirst((string) ($report['status'] ?? 'open')); ?>
+                            <tr>
+                                <td><?php echo e((string) ($report['reference_code'] ?? 'N/A')); ?></td>
+                                <td><?php echo e((string) ($report['issue_type'] ?? 'Issue')); ?></td>
+                                <td><?php echo e((string) ($report['reported_by'] ?? 'System')); ?></td>
+                                <td><span class="badge <?php echo e(badge_class_for_status((string) ($report['status'] ?? '')); ?>"><?php echo e($statusLabel); ?></span></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        <?php if (empty($incidentReports)): ?>
+                            <tr>
+                                <td colspan="4">No incident reports found.</td>
+                            </tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </section>
