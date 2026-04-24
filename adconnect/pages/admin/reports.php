@@ -44,7 +44,7 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                                 <td><?php echo e((string) ($report['reference_code'] ?? 'N/A')); ?></td>
                                 <td><?php echo e((string) ($report['issue_type'] ?? 'Issue')); ?></td>
                                 <td><?php echo e((string) ($report['reported_by'] ?? 'System')); ?></td>
-                                <td><span class="badge <?php echo e(badge_class_for_status((string) ($report['status'] ?? '')); ?>"><?php echo e($statusLabel); ?></span></td>
+                                <td><span class="badge <?php echo e(badge_class_for_status((string) ($report['status'] ?? ''))); ?>"><?php echo e($statusLabel); ?></span></td>
                             </tr>
                         <?php endforeach; ?>
                         <?php if (empty($incidentReports)): ?>
