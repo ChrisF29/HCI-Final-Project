@@ -1,6 +1,56 @@
 <?php
 require_once dirname(__DIR__) . '/includes/config.php';
 
+$inquiryError = '';
+$inquiryStatus = (string) ($_GET['inquiry'] ?? '');
+$inquiryForm = [
+    'full_name' => '',
+    'email' => '',
+    'company_name' => '',
+    'budget_range' => '',
+    'project_brief' => '',
+];
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $inquiryForm['full_name'] = trim((string) ($_POST['full_name'] ?? ''));
+    $inquiryForm['email'] = strtolower(trim((string) ($_POST['email'] ?? '')));
+    $inquiryForm['company_name'] = trim((string) ($_POST['company_name'] ?? ''));
+    $inquiryForm['budget_range'] = trim((string) ($_POST['budget_range'] ?? ''));
+    $inquiryForm['project_brief'] = trim((string) ($_POST['project_brief'] ?? ''));
+
+    if ($inquiryForm['full_name'] === '' || $inquiryForm['company_name'] === '' || $inquiryForm['budget_range'] === '' || $inquiryForm['project_brief'] === '') {
+        $inquiryError = 'Please complete all inquiry fields.';
+    } elseif (!filter_var($inquiryForm['email'], FILTER_VALIDATE_EMAIL)) {
+        $inquiryError = 'Please provide a valid email address.';
+    } elseif (!db_available()) {
+        $inquiryError = 'Database is unavailable right now. Please try again.';
+    } else {
+        $message = 'Company: ' . $inquiryForm['company_name']
+            . "\nBudget: " . $inquiryForm['budget_range']
+            . "\nBrief: " . $inquiryForm['project_brief'];
+
+        $saved = db_execute(
+            'INSERT INTO support_requests (user_id, name, email, topic, message, status)
+             VALUES (:user_id, :name, :email, :topic, :message, :status)',
+            [
+                'user_id' => current_user_id(),
+                'name' => $inquiryForm['full_name'],
+                'email' => $inquiryForm['email'],
+                'topic' => 'campaign-inquiry',
+                'message' => $message,
+                'status' => 'open',
+            ]
+        );
+
+        if ($saved) {
+            header('Location: ' . url('pages/home.php?inquiry=sent'));
+            exit;
+        }
+
+        $inquiryError = 'We could not submit your inquiry. Please try again.';
+    }
+}
+
 $pageTitle = 'Home';
 $activePage = 'home';
 $clientUserId = active_client_user_id();
@@ -106,32 +156,38 @@ require_once dirname(__DIR__) . '/includes/navbar.php';
             <h3>Submit Campaign Inquiry</h3>
             <button class="btn-ghost" type="button" data-modal-close>Close</button>
         </div>
-        <form action="#" method="POST" data-validate class="section-stack">
+        <?php if ($inquiryStatus === 'sent'): ?>
+            <div class="notice-item" role="status">Inquiry submitted successfully. Our team will contact you soon.</div>
+        <?php endif; ?>
+        <?php if ($inquiryError !== ''): ?>
+            <div class="notice-item" role="alert"><?php echo e($inquiryError); ?></div>
+        <?php endif; ?>
+        <form action="<?php echo e(url('pages/home.php')); ?>" method="POST" data-validate data-allow-submit class="section-stack">
             <div class="form-grid">
                 <div class="form-field">
                     <label for="inquiry-name">Full Name</label>
-                    <input id="inquiry-name" name="full_name" required>
+                    <input id="inquiry-name" name="full_name" value="<?php echo e($inquiryForm['full_name']); ?>" required>
                     <small class="field-error" data-error-for="full_name"></small>
                 </div>
                 <div class="form-field">
                     <label for="inquiry-email">Email Address</label>
-                    <input id="inquiry-email" type="email" name="email" required>
+                    <input id="inquiry-email" type="email" name="email" value="<?php echo e($inquiryForm['email']); ?>" required>
                     <small class="field-error" data-error-for="email"></small>
                 </div>
             </div>
             <div class="form-grid">
                 <div class="form-field">
                     <label for="inquiry-company">Company</label>
-                    <input id="inquiry-company" name="company_name" required>
+                    <input id="inquiry-company" name="company_name" value="<?php echo e($inquiryForm['company_name']); ?>" required>
                     <small class="field-error" data-error-for="company_name"></small>
                 </div>
                 <div class="form-field">
                     <label for="inquiry-budget">Budget Range</label>
                     <select id="inquiry-budget" name="budget_range" required>
                         <option value="">Select budget</option>
-                        <option value="under-50k">Under PHP 50,000</option>
-                        <option value="50k-150k">PHP 50,000 - PHP 150,000</option>
-                        <option value="150k-plus">PHP 150,000+</option>
+                        <option value="under-50k" <?php echo $inquiryForm['budget_range'] === 'under-50k' ? 'selected' : ''; ?>>Under PHP 50,000</option>
+                        <option value="50k-150k" <?php echo $inquiryForm['budget_range'] === '50k-150k' ? 'selected' : ''; ?>>PHP 50,000 - PHP 150,000</option>
+                        <option value="150k-plus" <?php echo $inquiryForm['budget_range'] === '150k-plus' ? 'selected' : ''; ?>>PHP 150,000+</option>
                     </select>
                     <small class="field-error" data-error-for="budget_range"></small>
                 </div>
@@ -139,7 +195,7 @@ require_once dirname(__DIR__) . '/includes/navbar.php';
             <div class="form-grid full">
                 <div class="form-field">
                     <label for="inquiry-message">Project Brief</label>
-                    <textarea id="inquiry-message" name="project_brief" required data-minlength="20"></textarea>
+                    <textarea id="inquiry-message" name="project_brief" required data-minlength="20"><?php echo e($inquiryForm['project_brief']); ?></textarea>
                     <small class="field-error" data-error-for="project_brief"></small>
                 </div>
             </div>

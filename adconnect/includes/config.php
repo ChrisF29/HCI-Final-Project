@@ -76,6 +76,15 @@ function is_authenticated(): bool
     return isset($_SESSION['user_id']) && is_numeric($_SESSION['user_id']);
 }
 
+function current_user_id(): ?int
+{
+    if (!is_authenticated()) {
+        return null;
+    }
+
+    return (int) $_SESSION['user_id'];
+}
+
 function dashboard_path_for_role(?string $role = null): string
 {
     $resolvedRole = strtolower((string) ($role ?? $_SESSION['role'] ?? 'guest'));

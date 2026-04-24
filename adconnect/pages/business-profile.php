@@ -1,6 +1,14 @@
 <?php
 require_once dirname(__DIR__) . '/includes/config.php';
 
+$inquiryError = '';
+$inquiryStatus = (string) ($_GET['inquiry'] ?? '');
+$inquiryForm = [
+    'contact_name' => '',
+    'contact_email' => '',
+    'campaign_needs' => '',
+];
+
 $pageTitle = 'Business Profile';
 $activePage = 'directory';
 $businessId = active_business_profile_id();
@@ -29,6 +37,127 @@ $profileCity = (string) ($businessProfile['city'] ?? 'Unspecified');
 $profileRating = (float) ($businessProfile['rating'] ?? 0);
 $profileBudget = ucfirst((string) ($businessProfile['budget_tier'] ?? 'mid'));
 $profileSpecialties = is_array($businessProfile['specialties'] ?? null) ? $businessProfile['specialties'] : [];
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $inquiryForm['contact_name'] = trim((string) ($_POST['contact_name'] ?? ''));
+    $inquiryForm['contact_email'] = strtolower(trim((string) ($_POST['contact_email'] ?? '')));
+    $inquiryForm['campaign_needs'] = trim((string) ($_POST['campaign_needs'] ?? ''));
+
+    if ($inquiryForm['contact_name'] === '' || $inquiryForm['campaign_needs'] === '') {
+        $inquiryError = 'Please complete all inquiry fields.';
+    } elseif (!filter_var($inquiryForm['contact_email'], FILTER_VALIDATE_EMAIL)) {
+        $inquiryError = 'Please provide a valid email address.';
+    } elseif (!db_available()) {
+        $inquiryError = 'Database is unavailable right now. Please try again.';
+    } elseif ($businessId === null) {
+        $inquiryError = 'Unable to identify business profile for this inquiry.';
+    } else {
+        $currentUserId = current_user_id();
+        $isClient = has_role('client') && $currentUserId !== null;
+
+        if ($isClient) {
+            $connection = db();
+            if (!$connection) {
+                $inquiryError = 'Unable to submit inquiry right now.';
+            } else {
+                try {
+                    $connection->beginTransaction();
+
+                    $inquiryStatement = $connection->prepare(
+                        'INSERT INTO inquiries (
+                            client_user_id,
+                            business_id,
+                            campaign_need,
+                            budget_amount,
+                            status,
+                            latest_subject,
+                            latest_message
+                        ) VALUES (
+                            :client_user_id,
+                            :business_id,
+                            :campaign_need,
+                            :budget_amount,
+                            :status,
+                            :latest_subject,
+                            :latest_message
+                        )'
+                    );
+
+                    $inquiryStatement->execute([
+                        'client_user_id' => $currentUserId,
+                        'business_id' => $businessId,
+                        'campaign_need' => substr($inquiryForm['campaign_needs'], 0, 200),
+                        'budget_amount' => null,
+                        'status' => 'pending',
+                        'latest_subject' => 'New inquiry via profile',
+                        'latest_message' => $inquiryForm['campaign_needs'],
+                    ]);
+
+                    $inquiryId = (int) $connection->lastInsertId();
+                    $businessUserId = (int) (db_value('SELECT user_id FROM business_profiles WHERE id = :business_id LIMIT 1', ['business_id' => $businessId]) ?? 0);
+
+                    if ($inquiryId > 0 && $businessUserId > 0) {
+                        $messageStatement = $connection->prepare(
+                            'INSERT INTO messages (
+                                inquiry_id,
+                                sender_user_id,
+                                recipient_user_id,
+                                subject,
+                                body,
+                                message_status
+                            ) VALUES (
+                                :inquiry_id,
+                                :sender_user_id,
+                                :recipient_user_id,
+                                :subject,
+                                :body,
+                                :message_status
+                            )'
+                        );
+
+                        $messageStatement->execute([
+                            'inquiry_id' => $inquiryId,
+                            'sender_user_id' => $currentUserId,
+                            'recipient_user_id' => $businessUserId,
+                            'subject' => 'New inquiry via profile',
+                            'body' => $inquiryForm['campaign_needs'],
+                            'message_status' => 'open',
+                        ]);
+                    }
+
+                    $connection->commit();
+                    header('Location: ' . url('pages/business-profile.php?business_id=' . $businessId . '&inquiry=sent'));
+                    exit;
+                } catch (Throwable $exception) {
+                    if ($connection->inTransaction()) {
+                        $connection->rollBack();
+                    }
+                    $inquiryError = 'Unable to submit inquiry right now. Please try again.';
+                }
+            }
+        } else {
+            $saved = db_execute(
+                'INSERT INTO support_requests (user_id, name, email, topic, message, status)
+                 VALUES (:user_id, :name, :email, :topic, :message, :status)',
+                [
+                    'user_id' => $currentUserId,
+                    'name' => $inquiryForm['contact_name'],
+                    'email' => $inquiryForm['contact_email'],
+                    'topic' => 'business-inquiry',
+                    'message' => 'Business: ' . $profileName . "\nNeed: " . $inquiryForm['campaign_needs'],
+                    'status' => 'open',
+                ]
+            );
+
+            if ($saved) {
+                header('Location: ' . url('pages/business-profile.php?business_id=' . $businessId . '&inquiry=queued'));
+                exit;
+            }
+
+            $inquiryError = 'Unable to submit inquiry right now. Please try again.';
+        }
+    }
+}
 
 require_once dirname(__DIR__) . '/includes/header.php';
 require_once dirname(__DIR__) . '/includes/navbar.php';
@@ -112,23 +241,31 @@ require_once dirname(__DIR__) . '/includes/navbar.php';
 
         <section class="card section-stack">
             <h2>Send an inquiry</h2>
-            <form action="#" method="POST" data-validate>
+            <?php if ($inquiryStatus === 'sent'): ?>
+                <div class="notice-item" role="status">Inquiry sent successfully to this business.</div>
+            <?php elseif ($inquiryStatus === 'queued'): ?>
+                <div class="notice-item" role="status">Inquiry submitted. Sign in as a client to open tracked conversations.</div>
+            <?php endif; ?>
+            <?php if ($inquiryError !== ''): ?>
+                <div class="notice-item" role="alert"><?php echo e($inquiryError); ?></div>
+            <?php endif; ?>
+            <form action="<?php echo e(url('pages/business-profile.php?business_id=' . $businessId)); ?>" method="POST" data-validate data-allow-submit>
                 <div class="form-grid">
                     <div class="form-field">
                         <label for="contact-name">Your Name</label>
-                        <input id="contact-name" name="contact_name" required>
+                        <input id="contact-name" name="contact_name" value="<?php echo e($inquiryForm['contact_name']); ?>" required>
                         <small class="field-error" data-error-for="contact_name"></small>
                     </div>
                     <div class="form-field">
                         <label for="contact-email">Your Email</label>
-                        <input id="contact-email" type="email" name="contact_email" required>
+                        <input id="contact-email" type="email" name="contact_email" value="<?php echo e($inquiryForm['contact_email']); ?>" required>
                         <small class="field-error" data-error-for="contact_email"></small>
                     </div>
                 </div>
                 <div class="form-grid full">
                     <div class="form-field">
                         <label for="contact-needs">Campaign Needs</label>
-                        <textarea id="contact-needs" name="campaign_needs" required data-minlength="20"></textarea>
+                        <textarea id="contact-needs" name="campaign_needs" required data-minlength="20"><?php echo e($inquiryForm['campaign_needs']); ?></textarea>
                         <small class="field-error" data-error-for="campaign_needs"></small>
                     </div>
                 </div>

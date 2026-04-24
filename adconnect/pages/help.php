@@ -1,6 +1,50 @@
 <?php
 require_once dirname(__DIR__) . '/includes/config.php';
 
+$supportError = '';
+$supportStatus = (string) ($_GET['support'] ?? '');
+$supportForm = [
+    'support_name' => '',
+    'support_email' => '',
+    'support_topic' => '',
+    'support_message' => '',
+];
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $supportForm['support_name'] = trim((string) ($_POST['support_name'] ?? ''));
+    $supportForm['support_email'] = strtolower(trim((string) ($_POST['support_email'] ?? '')));
+    $supportForm['support_topic'] = trim((string) ($_POST['support_topic'] ?? ''));
+    $supportForm['support_message'] = trim((string) ($_POST['support_message'] ?? ''));
+
+    if ($supportForm['support_name'] === '' || $supportForm['support_topic'] === '' || $supportForm['support_message'] === '') {
+        $supportError = 'Please complete all support form fields.';
+    } elseif (!filter_var($supportForm['support_email'], FILTER_VALIDATE_EMAIL)) {
+        $supportError = 'Please provide a valid email address.';
+    } elseif (!db_available()) {
+        $supportError = 'Database is unavailable right now. Please try again.';
+    } else {
+        $saved = db_execute(
+            'INSERT INTO support_requests (user_id, name, email, topic, message, status)
+             VALUES (:user_id, :name, :email, :topic, :message, :status)',
+            [
+                'user_id' => current_user_id(),
+                'name' => $supportForm['support_name'],
+                'email' => $supportForm['support_email'],
+                'topic' => $supportForm['support_topic'],
+                'message' => $supportForm['support_message'],
+                'status' => 'open',
+            ]
+        );
+
+        if ($saved) {
+            header('Location: ' . url('pages/help.php?support=sent'));
+            exit;
+        }
+
+        $supportError = 'Unable to submit support request. Please try again.';
+    }
+}
+
 $pageTitle = 'Help Center';
 $activePage = 'help';
 
@@ -43,16 +87,22 @@ require_once dirname(__DIR__) . '/includes/navbar.php';
             </article>
 
             <article class="tab-panel" data-tab-panel="support">
-                <form action="#" method="POST" data-validate class="section-stack">
+                <?php if ($supportStatus === 'sent'): ?>
+                    <div class="notice-item" role="status">Support request submitted successfully.</div>
+                <?php endif; ?>
+                <?php if ($supportError !== ''): ?>
+                    <div class="notice-item" role="alert"><?php echo e($supportError); ?></div>
+                <?php endif; ?>
+                <form action="<?php echo e(url('pages/help.php')); ?>" method="POST" data-validate data-allow-submit class="section-stack">
                     <div class="form-grid">
                         <div class="form-field">
                             <label for="support-name">Full Name</label>
-                            <input id="support-name" name="support_name" required>
+                            <input id="support-name" name="support_name" value="<?php echo e($supportForm['support_name']); ?>" required>
                             <small class="field-error" data-error-for="support_name"></small>
                         </div>
                         <div class="form-field">
                             <label for="support-email">Email Address</label>
-                            <input id="support-email" type="email" name="support_email" required>
+                            <input id="support-email" type="email" name="support_email" value="<?php echo e($supportForm['support_email']); ?>" required>
                             <small class="field-error" data-error-for="support_email"></small>
                         </div>
                     </div>
@@ -61,15 +111,15 @@ require_once dirname(__DIR__) . '/includes/navbar.php';
                             <label for="support-topic">Topic</label>
                             <select id="support-topic" name="support_topic" required>
                                 <option value="">Select concern</option>
-                                <option value="account">Account</option>
-                                <option value="billing">Billing</option>
-                                <option value="technical">Technical Issue</option>
+                                <option value="account" <?php echo $supportForm['support_topic'] === 'account' ? 'selected' : ''; ?>>Account</option>
+                                <option value="billing" <?php echo $supportForm['support_topic'] === 'billing' ? 'selected' : ''; ?>>Billing</option>
+                                <option value="technical" <?php echo $supportForm['support_topic'] === 'technical' ? 'selected' : ''; ?>>Technical Issue</option>
                             </select>
                             <small class="field-error" data-error-for="support_topic"></small>
                         </div>
                         <div class="form-field">
                             <label for="support-message">Message</label>
-                            <textarea id="support-message" name="support_message" required data-minlength="20"></textarea>
+                            <textarea id="support-message" name="support_message" required data-minlength="20"><?php echo e($supportForm['support_message']); ?></textarea>
                             <small class="field-error" data-error-for="support_message"></small>
                         </div>
                     </div>

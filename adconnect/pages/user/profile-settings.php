@@ -1,11 +1,77 @@
 <?php
 require_once dirname(__DIR__, 2) . '/includes/config.php';
 
+$settingsError = '';
+$settingsStatus = (string) ($_GET['saved'] ?? '');
+
 $pageTitle = 'Profile Settings';
 $activePage = '';
 $sidebarRole = 'user';
 $sidebarPage = 'profile-settings';
 $clientUserId = active_client_user_id();
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $userId = current_user_id();
+    $firstName = trim((string) ($_POST['first_name'] ?? ''));
+    $lastName = trim((string) ($_POST['last_name'] ?? ''));
+    $email = strtolower(trim((string) ($_POST['email'] ?? '')));
+    $phoneNumber = trim((string) ($_POST['phone_number'] ?? ''));
+    $newPassword = (string) ($_POST['new_password'] ?? '');
+    $notifyEmail = isset($_POST['notify_email']) ? 1 : 0;
+
+    if ($userId === null) {
+        $settingsError = 'You must be signed in to update your profile.';
+    } elseif ($firstName === '' || $lastName === '' || $phoneNumber === '') {
+        $settingsError = 'Please complete all required profile fields.';
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $settingsError = 'Please provide a valid email address.';
+    } elseif ($newPassword !== '' && strlen($newPassword) < 8) {
+        $settingsError = 'New password must be at least 8 characters long.';
+    } elseif (!db_available()) {
+        $settingsError = 'Database is unavailable right now. Please try again.';
+    } else {
+        $existingUser = db_one(
+            'SELECT id FROM users WHERE email = :email AND id <> :id LIMIT 1',
+            ['email' => $email, 'id' => $userId]
+        );
+
+        if ($existingUser) {
+            $settingsError = 'That email is already used by another account.';
+        } else {
+            $params = [
+                'first_name' => $firstName,
+                'last_name' => $lastName,
+                'email' => $email,
+                'phone_number' => $phoneNumber,
+                'notify_email' => $notifyEmail,
+                'id' => $userId,
+            ];
+
+            $sql = 'UPDATE users
+                    SET first_name = :first_name,
+                        last_name = :last_name,
+                        email = :email,
+                        phone_number = :phone_number,
+                        notify_email = :notify_email';
+
+            if ($newPassword !== '') {
+                $sql .= ', password_hash = :password_hash';
+                $params['password_hash'] = password_hash($newPassword, PASSWORD_DEFAULT);
+            }
+
+            $sql .= ' WHERE id = :id';
+
+            $saved = db_execute($sql, $params);
+            if ($saved) {
+                header('Location: ' . url('pages/user/profile-settings.php?saved=1'));
+                exit;
+            }
+
+            $settingsError = 'Unable to save profile changes right now.';
+        }
+    }
+}
+
 $profile = $clientUserId !== null
     ? db_one(
         'SELECT first_name, last_name, email, phone_number, notify_email FROM users WHERE id = :client_user_id LIMIT 1',
@@ -34,7 +100,13 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
             </section>
 
             <section class="card section-stack">
-                <form action="#" method="POST" data-validate class="section-stack">
+                <?php if ($settingsStatus === '1'): ?>
+                    <div class="notice-item" role="status">Profile settings updated successfully.</div>
+                <?php endif; ?>
+                <?php if ($settingsError !== ''): ?>
+                    <div class="notice-item" role="alert"><?php echo e($settingsError); ?></div>
+                <?php endif; ?>
+                <form action="<?php echo e(url('pages/user/profile-settings.php')); ?>" method="POST" data-validate data-allow-submit class="section-stack">
                     <div class="form-grid">
                         <div class="form-field">
                             <label for="settings-first-name">First Name</label>

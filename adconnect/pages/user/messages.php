@@ -1,11 +1,144 @@
 <?php
 require_once dirname(__DIR__, 2) . '/includes/config.php';
 
+$messageError = '';
+$messageStatus = (string) ($_GET['sent'] ?? '');
+$messageForm = [
+    'recipient' => '',
+    'subject' => '',
+    'message_body' => '',
+];
+
 $pageTitle = 'Messages';
 $activePage = '';
 $sidebarRole = 'user';
 $sidebarPage = 'messages';
 $clientUserId = active_client_user_id();
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $messageForm['recipient'] = trim((string) ($_POST['recipient'] ?? ''));
+    $messageForm['subject'] = trim((string) ($_POST['subject'] ?? ''));
+    $messageForm['message_body'] = trim((string) ($_POST['message_body'] ?? ''));
+
+    $senderUserId = current_user_id();
+    $businessId = ctype_digit($messageForm['recipient']) ? (int) $messageForm['recipient'] : 0;
+
+    if ($businessId <= 0 || $messageForm['subject'] === '' || $messageForm['message_body'] === '') {
+        $messageError = 'Please complete all message fields.';
+    } elseif ($senderUserId === null) {
+        $messageError = 'You must be signed in to send a message.';
+    } elseif (!db_available()) {
+        $messageError = 'Database is unavailable right now. Please try again.';
+    } else {
+        $businessUserId = (int) (db_value('SELECT user_id FROM business_profiles WHERE id = :business_id LIMIT 1', ['business_id' => $businessId]) ?? 0);
+
+        if ($businessUserId <= 0) {
+            $messageError = 'Selected business was not found.';
+        } else {
+            $connection = db();
+            if (!$connection) {
+                $messageError = 'Unable to send message right now.';
+            } else {
+                try {
+                    $connection->beginTransaction();
+
+                    $inquiryId = (int) (db_value(
+                        'SELECT id FROM inquiries WHERE client_user_id = :client_user_id AND business_id = :business_id ORDER BY updated_at DESC, id DESC LIMIT 1',
+                        ['client_user_id' => $senderUserId, 'business_id' => $businessId]
+                    ) ?? 0);
+
+                    if ($inquiryId <= 0) {
+                        $inquiryStatement = $connection->prepare(
+                            'INSERT INTO inquiries (
+                                client_user_id,
+                                business_id,
+                                campaign_need,
+                                budget_amount,
+                                status,
+                                latest_subject,
+                                latest_message
+                            ) VALUES (
+                                :client_user_id,
+                                :business_id,
+                                :campaign_need,
+                                :budget_amount,
+                                :status,
+                                :latest_subject,
+                                :latest_message
+                            )'
+                        );
+
+                        $inquiryStatement->execute([
+                            'client_user_id' => $senderUserId,
+                            'business_id' => $businessId,
+                            'campaign_need' => substr($messageForm['subject'], 0, 200),
+                            'budget_amount' => null,
+                            'status' => 'pending',
+                            'latest_subject' => $messageForm['subject'],
+                            'latest_message' => $messageForm['message_body'],
+                        ]);
+
+                        $inquiryId = (int) $connection->lastInsertId();
+                    }
+
+                    $messageStatement = $connection->prepare(
+                        'INSERT INTO messages (
+                            inquiry_id,
+                            sender_user_id,
+                            recipient_user_id,
+                            subject,
+                            body,
+                            message_status
+                        ) VALUES (
+                            :inquiry_id,
+                            :sender_user_id,
+                            :recipient_user_id,
+                            :subject,
+                            :body,
+                            :message_status
+                        )'
+                    );
+
+                    $messageStatement->execute([
+                        'inquiry_id' => $inquiryId,
+                        'sender_user_id' => $senderUserId,
+                        'recipient_user_id' => $businessUserId,
+                        'subject' => $messageForm['subject'],
+                        'body' => $messageForm['message_body'],
+                        'message_status' => 'open',
+                    ]);
+
+                    $updateInquiryStatement = $connection->prepare(
+                        'UPDATE inquiries
+                         SET latest_subject = :latest_subject,
+                             latest_message = :latest_message,
+                             status = :status,
+                             updated_at = CURRENT_TIMESTAMP
+                         WHERE id = :id'
+                    );
+
+                    $updateInquiryStatement->execute([
+                        'latest_subject' => $messageForm['subject'],
+                        'latest_message' => $messageForm['message_body'],
+                        'status' => 'pending',
+                        'id' => $inquiryId,
+                    ]);
+
+                    $connection->commit();
+                    header('Location: ' . url('pages/user/messages.php?sent=1'));
+                    exit;
+                } catch (Throwable $exception) {
+                    if ($connection->inTransaction()) {
+                        $connection->rollBack();
+                    }
+
+                    $messageError = 'Unable to send message right now. Please try again.';
+                }
+            }
+        }
+    }
+}
+
 $messages = fetch_messages_for_client($clientUserId, 200);
 $recipientBusinesses = fetch_business_listings(100, $clientUserId, false);
 
@@ -60,28 +193,35 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
 
             <section class="card section-stack">
                 <h3>Send a new message</h3>
-                <form action="#" method="POST" data-validate>
+                <?php if ($messageStatus === '1'): ?>
+                    <div class="notice-item" role="status">Message sent successfully.</div>
+                <?php endif; ?>
+                <?php if ($messageError !== ''): ?>
+                    <div class="notice-item" role="alert"><?php echo e($messageError); ?></div>
+                <?php endif; ?>
+                <form action="<?php echo e(url('pages/user/messages.php')); ?>" method="POST" data-validate data-allow-submit>
                     <div class="form-grid">
                         <div class="form-field">
                             <label for="msg-recipient">Recipient</label>
                             <select id="msg-recipient" name="recipient" required>
                                 <option value="">Choose business</option>
                                 <?php foreach ($recipientBusinesses as $business): ?>
-                                    <option value="<?php echo e((string) ($business['id'] ?? '')); ?>"><?php echo e((string) ($business['business_name'] ?? 'Business')); ?></option>
+                                    <?php $businessIdOption = (string) ($business['id'] ?? ''); ?>
+                                    <option value="<?php echo e($businessIdOption); ?>" <?php echo $messageForm['recipient'] === $businessIdOption ? 'selected' : ''; ?>><?php echo e((string) ($business['business_name'] ?? 'Business')); ?></option>
                                 <?php endforeach; ?>
                             </select>
                             <small class="field-error" data-error-for="recipient"></small>
                         </div>
                         <div class="form-field">
                             <label for="msg-subject">Subject</label>
-                            <input id="msg-subject" name="subject" required>
+                            <input id="msg-subject" name="subject" value="<?php echo e($messageForm['subject']); ?>" required>
                             <small class="field-error" data-error-for="subject"></small>
                         </div>
                     </div>
                     <div class="form-grid full">
                         <div class="form-field">
                             <label for="msg-body">Message</label>
-                            <textarea id="msg-body" name="message_body" required data-minlength="15"></textarea>
+                            <textarea id="msg-body" name="message_body" required data-minlength="15"><?php echo e($messageForm['message_body']); ?></textarea>
                             <small class="field-error" data-error-for="message_body"></small>
                         </div>
                     </div>

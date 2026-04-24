@@ -1,11 +1,63 @@
 <?php
 require_once dirname(__DIR__, 2) . '/includes/config.php';
 
+$profileError = '';
+$profileStatus = (string) ($_GET['saved'] ?? '');
+
 $pageTitle = 'Manage Profile';
 $activePage = '';
 $sidebarRole = 'business';
 $sidebarPage = 'manage-profile';
 $businessId = active_business_profile_id();
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $businessName = trim((string) ($_POST['business_name'] ?? ''));
+    $businessCategorySlug = strtolower(trim((string) ($_POST['business_category'] ?? '')));
+    $contactEmail = strtolower(trim((string) ($_POST['contact_email'] ?? '')));
+    $contactPhone = trim((string) ($_POST['contact_phone'] ?? ''));
+    $businessDescription = trim((string) ($_POST['business_description'] ?? ''));
+
+    if ($businessId === null) {
+        $profileError = 'Business profile was not found.';
+    } elseif ($businessName === '' || $businessCategorySlug === '' || $contactPhone === '' || $businessDescription === '') {
+        $profileError = 'Please complete all required profile fields.';
+    } elseif (!filter_var($contactEmail, FILTER_VALIDATE_EMAIL)) {
+        $profileError = 'Please provide a valid contact email.';
+    } elseif (!db_available()) {
+        $profileError = 'Database is unavailable right now. Please try again.';
+    } else {
+        $categoryId = db_value('SELECT id FROM categories WHERE slug = :slug AND is_active = 1 LIMIT 1', ['slug' => $businessCategorySlug]);
+        if ($categoryId === null) {
+            $profileError = 'Selected category does not exist.';
+        } else {
+            $saved = db_execute(
+                'UPDATE business_profiles
+                 SET business_name = :business_name,
+                     category_id = :category_id,
+                     contact_email = :contact_email,
+                     contact_phone = :contact_phone,
+                     description = :description
+                 WHERE id = :id',
+                [
+                    'business_name' => $businessName,
+                    'category_id' => (int) $categoryId,
+                    'contact_email' => $contactEmail,
+                    'contact_phone' => $contactPhone,
+                    'description' => $businessDescription,
+                    'id' => $businessId,
+                ]
+            );
+
+            if ($saved) {
+                header('Location: ' . url('pages/business/manage-profile.php?saved=1'));
+                exit;
+            }
+
+            $profileError = 'Unable to save profile changes right now.';
+        }
+    }
+}
+
 $businessProfile = fetch_business_profile($businessId);
 $categories = fetch_categories_with_counts();
 $selectedCategorySlug = strtolower((string) ($businessProfile['category_slug'] ?? ''));
@@ -31,7 +83,13 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
             </section>
 
             <section class="card section-stack">
-                <form action="#" method="POST" data-validate class="section-stack">
+                <?php if ($profileStatus === '1'): ?>
+                    <div class="notice-item" role="status">Business profile updated successfully.</div>
+                <?php endif; ?>
+                <?php if ($profileError !== ''): ?>
+                    <div class="notice-item" role="alert"><?php echo e($profileError); ?></div>
+                <?php endif; ?>
+                <form action="<?php echo e(url('pages/business/manage-profile.php')); ?>" method="POST" data-validate data-allow-submit class="section-stack">
                     <div class="form-grid">
                         <div class="form-field">
                             <label for="business-name">Business Name</label>
