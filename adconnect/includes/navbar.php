@@ -1,6 +1,5 @@
 <?php
 $activePage = $activePage ?? '';
-$roleLabel = ucfirst($simulatedRole);
 ?>
 <header class="topbar">
     <div class="container topbar-inner">
@@ -25,13 +24,9 @@ $roleLabel = ucfirst($simulatedRole);
 
             <div class="nav-dropdown" data-dropdown>
                 <button class="nav-link dropdown-toggle" type="button" data-dropdown-toggle>
-                    Portals
+                    Account
                 </button>
                 <div class="dropdown-menu" data-dropdown-menu>
-                    <a href="<?php echo e(url('pages/user/dashboard.php?role=client')); ?>">Client Portal</a>
-                    <a href="<?php echo e(url('pages/business/dashboard.php?role=business')); ?>">Business Portal</a>
-                    <a href="<?php echo e(url('pages/admin/dashboard.php?role=admin')); ?>">Admin Portal</a>
-                    <hr>
                     <a href="<?php echo e(url('pages/auth/login.php')); ?>">Login</a>
                     <a href="<?php echo e(url('pages/auth/register.php')); ?>">Register</a>
                 </div>
@@ -46,7 +41,6 @@ $roleLabel = ucfirst($simulatedRole);
             <button class="icon-button" type="button" data-notify="You have 3 new alerts waiting.">
                 Alerts
             </button>
-            <span class="role-chip">View: <?php echo e($roleLabel); ?></span>
         </div>
     </div>
 </header>

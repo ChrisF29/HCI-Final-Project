@@ -61,7 +61,9 @@ AdConnect is a role-based advertising and client-matching web platform powered b
 
 - File: `database/schema.sql`
 - Covers users, business profiles, categories, specialties, campaigns, ads, inquiries, messages, favorites, reviews, reports, notifications, analytics, and support requests.
-- No sample seed rows are included.
+- Includes a default admin seed account:
+	- Email: `admin@adconnect.local`
+	- Password: `Admin123!`
 
 ## Run Locally (XAMPP)
 

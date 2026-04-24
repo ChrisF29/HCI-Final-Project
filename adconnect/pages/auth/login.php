@@ -20,6 +20,12 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
         </section>
 
         <section class="card section-stack">
+            <div class="notice-item">
+                <strong>Default Admin Account</strong><br>
+                Email: admin@adconnect.local<br>
+                Password: Admin123!
+            </div>
+
             <form action="#" method="POST" data-validate class="section-stack">
                 <div class="form-grid full">
                     <div class="form-field">

@@ -198,3 +198,25 @@ CREATE TABLE IF NOT EXISTS support_requests (
     CONSTRAINT fk_support_requests_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
     INDEX idx_support_requests_status (status)
 ) ENGINE=InnoDB;
+
+INSERT IGNORE INTO users (
+    first_name,
+    last_name,
+    display_name,
+    email,
+    password_hash,
+    role,
+    status,
+    phone_number,
+    notify_email
+) VALUES (
+    'System',
+    'Administrator',
+    'Admin',
+    'admin@adconnect.local',
+    '$2y$10$B8QyeU4Ub9ja0u3JMAH/QuCEBzG2Is20O5D7WmGDQMjb5zbhAlGH.',
+    'admin',
+    'active',
+    '09170000000',
+    1
+);
