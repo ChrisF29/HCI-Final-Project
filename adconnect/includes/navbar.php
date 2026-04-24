@@ -56,8 +56,8 @@ $activeRoleLabel = $roleLabelMap[$activeRole] ?? 'Guest';
             <button class="icon-button" type="button" data-notify="You have 3 new alerts waiting.">
                 Alerts
             </button>
-            <button class="icon-button" type="button" data-theme-toggle aria-pressed="false">
-                Night Mode
+            <button class="icon-button" type="button" data-theme-toggle aria-pressed="false" aria-label="Enable night mode" title="Enable night mode">
+                &#9790;
             </button>
         </div>
     </div>

@@ -140,8 +140,13 @@
             return;
         }
 
+        const icon = isNight ? '\u2600' : '\u263E';
+        const label = isNight ? 'Enable day mode' : 'Enable night mode';
+
         toggle.setAttribute('aria-pressed', String(isNight));
-        toggle.textContent = isNight ? 'Day Mode' : 'Night Mode';
+        toggle.setAttribute('aria-label', label);
+        toggle.setAttribute('title', label);
+        toggle.textContent = icon;
     }
 
     function initThemeToggle() {
