@@ -33,7 +33,9 @@ if (stripos($appBasePath, 'adconnect') === false) {
     $appBasePath = '/adconnect';
 }
 
-$simulatedRole = strtolower((string) ($_GET['role'] ?? $_SESSION['role'] ?? 'guest'));
+$sessionRole = (string) ($_SESSION['role'] ?? 'guest');
+$hasAuthenticatedUser = isset($_SESSION['user_id']) && is_numeric($_SESSION['user_id']);
+$simulatedRole = strtolower($hasAuthenticatedUser ? $sessionRole : 'guest');
 $allowedRoles = ['guest', 'client', 'business', 'admin'];
 if (!in_array($simulatedRole, $allowedRoles, true)) {
     $simulatedRole = 'guest';
@@ -67,6 +69,48 @@ function has_role(string $role): bool
     global $simulatedRole;
 
     return $simulatedRole === strtolower($role);
+}
+
+function is_authenticated(): bool
+{
+    return isset($_SESSION['user_id']) && is_numeric($_SESSION['user_id']);
+}
+
+function dashboard_path_for_role(?string $role = null): string
+{
+    $resolvedRole = strtolower((string) ($role ?? $_SESSION['role'] ?? 'guest'));
+    $map = [
+        'client' => 'pages/user/dashboard.php',
+        'business' => 'pages/business/dashboard.php',
+        'admin' => 'pages/admin/dashboard.php',
+    ];
+
+    return $map[$resolvedRole] ?? 'pages/home.php';
+}
+
+function enforce_role_based_route_guard(): void
+{
+    $scriptName = str_replace('\\', '/', strtolower((string) ($_SERVER['SCRIPT_NAME'] ?? '')));
+    $role = strtolower((string) ($_SESSION['role'] ?? 'guest'));
+
+    $isAdminRoute = str_contains($scriptName, '/pages/admin/');
+    $isBusinessRoute = str_contains($scriptName, '/pages/business/');
+    $isUserRoute = str_contains($scriptName, '/pages/user/');
+
+    $isAllowed = true;
+
+    if ($isAdminRoute) {
+        $isAllowed = $role === 'admin';
+    } elseif ($isBusinessRoute) {
+        $isAllowed = in_array($role, ['business', 'admin'], true);
+    } elseif ($isUserRoute) {
+        $isAllowed = in_array($role, ['client', 'admin'], true);
+    }
+
+    if (!$isAllowed) {
+        header('Location: ' . url('pages/errors/access-denied.php'));
+        exit;
+    }
 }
 
 function db(): ?PDO
@@ -277,5 +321,7 @@ function pct(int|float $value): int
 
     return max(0, min(100, $normalized));
 }
+
+enforce_role_based_route_guard();
 
 require_once __DIR__ . '/data.php';

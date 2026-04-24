@@ -21,6 +21,23 @@
     --font-heading: "Sora", "Segoe UI", sans-serif;
 }
 
+body.theme-night {
+    --bg: #0f141b;
+    --bg-elevated: #111823;
+    --surface: #151e2a;
+    --surface-muted: #1b2634;
+    --ink: #e6edf5;
+    --ink-soft: #9fb0c4;
+    --line: #2a3a4f;
+    --brand: #2dd4bf;
+    --brand-deep: #14b8a6;
+    --highlight: #fb923c;
+    --danger: #f87171;
+    --success: #34d399;
+    --shadow-sm: 0 6px 18px rgba(2, 6, 23, 0.45);
+    --shadow-md: 0 24px 38px rgba(2, 6, 23, 0.58);
+}
+
 * {
     box-sizing: border-box;
 }
@@ -40,6 +57,13 @@ body {
         linear-gradient(165deg, #edf3ed 0%, #f9f8f2 60%, #eef4f2 100%);
     min-height: 100vh;
     line-height: 1.55;
+}
+
+body.theme-night {
+    background:
+        radial-gradient(circle at 12% 14%, rgba(45, 212, 191, 0.14), transparent 40%),
+        radial-gradient(circle at 86% 8%, rgba(251, 146, 60, 0.12), transparent 32%),
+        linear-gradient(170deg, #0d131c 0%, #101926 56%, #0b121b 100%);
 }
 
 a {
@@ -225,6 +249,14 @@ button {
     color: var(--ink-soft);
 }
 
+.dropdown-label {
+    margin: 0;
+    padding: 0.45rem 0.65rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--ink-soft);
+}
+
 .dropdown-menu a:hover {
     background: var(--surface-muted);
     color: var(--ink);
@@ -249,6 +281,53 @@ button {
     background: #fff;
     padding: 0.58rem 0.9rem;
     font-size: 0.88rem;
+}
+
+body.theme-night .topbar {
+    border-bottom: 1px solid rgba(42, 58, 79, 0.9);
+    background: rgba(16, 24, 35, 0.88);
+}
+
+body.theme-night .page-hero {
+    background: linear-gradient(150deg, #151f2b, #111a25);
+}
+
+body.theme-night .site-footer {
+    border-top: 1px solid rgba(42, 58, 79, 0.9);
+    background: rgba(14, 20, 30, 0.86);
+}
+
+body.theme-night .nav-search input,
+body.theme-night .toolbar input,
+body.theme-night .toolbar select,
+body.theme-night .form-field input,
+body.theme-night .form-field select,
+body.theme-night .form-field textarea,
+body.theme-night .tab-list button,
+body.theme-night .modal-card,
+body.theme-night .table-wrap,
+body.theme-night .notice-item {
+    background: #121a25;
+    border-color: var(--line);
+    color: var(--ink);
+}
+
+body.theme-night .table th {
+    background: #172334;
+    color: var(--ink-soft);
+}
+
+body.theme-night .meter {
+    background: #263447;
+}
+
+body.theme-night .chip {
+    background: #1a2737;
+}
+
+body.theme-night .empty-state {
+    border-color: #36506d;
+    background: rgba(18, 26, 37, 0.8);
 }
 
 .role-chip {

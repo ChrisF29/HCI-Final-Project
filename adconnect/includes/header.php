@@ -18,7 +18,7 @@ global $appName, $appDescription;
     <link rel="stylesheet" href="<?php echo e(url('assets/css/components.css')); ?>">
     <link rel="stylesheet" href="<?php echo e(url('assets/css/responsive.css')); ?>">
 </head>
-<body class="<?php echo e($pageClass); ?>">
+<body class="<?php echo e($pageClass); ?>" data-role="<?php echo e((string) ($_SESSION['role'] ?? 'guest')); ?>">
 <div class="bg-orb orb-a" aria-hidden="true"></div>
 <div class="bg-orb orb-b" aria-hidden="true"></div>
 <div id="notification-root" class="toast-stack" aria-live="polite" aria-atomic="true"></div>

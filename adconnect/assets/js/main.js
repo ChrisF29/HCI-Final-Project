@@ -110,6 +110,36 @@
         });
     }
 
+    function applyTheme(theme) {
+        const isNight = theme === 'night';
+        document.body.classList.toggle('theme-night', isNight);
+
+        const toggle = selectOne('[data-theme-toggle]');
+        if (!toggle) {
+            return;
+        }
+
+        toggle.setAttribute('aria-pressed', String(isNight));
+        toggle.textContent = isNight ? 'Day Mode' : 'Night Mode';
+    }
+
+    function initThemeToggle() {
+        const toggle = selectOne('[data-theme-toggle]');
+        if (!toggle) {
+            return;
+        }
+
+        const storedTheme = window.localStorage.getItem('adconnect-theme');
+        const initialTheme = storedTheme === 'night' ? 'night' : 'day';
+        applyTheme(initialTheme);
+
+        toggle.addEventListener('click', () => {
+            const nextTheme = document.body.classList.contains('theme-night') ? 'day' : 'night';
+            window.localStorage.setItem('adconnect-theme', nextTheme);
+            applyTheme(nextTheme);
+        });
+    }
+
     function validateField(input, form) {
         const name = input.getAttribute('name') || '';
         const errorContainer = selectOne(`[data-error-for="${name}"]`, form);
@@ -175,14 +205,25 @@
                     }
                 });
 
+                if (!isFormValid) {
+                    event.preventDefault();
+                    showToast('Please fix validation errors before submitting.');
+
+                    return;
+                }
+
+                if (form.hasAttribute('data-allow-submit')) {
+                    return;
+                }
+
                 event.preventDefault();
-                showToast(isFormValid ? 'Form validated. Ready for backend POST handling.' : 'Please fix validation errors before submitting.');
+                showToast('Form validated. Ready for backend POST handling.');
             });
         });
     }
 
     function initRoleVisibility() {
-        const role = new URLSearchParams(window.location.search).get('role') || 'guest';
+        const role = (document.body.getAttribute('data-role') || 'guest').toLowerCase();
         selectAll('[data-visible-for]').forEach((element) => {
             const allowed = (element.getAttribute('data-visible-for') || '')
                 .split(',')
@@ -200,6 +241,7 @@
         initTabs();
         initModals();
         initNotificationTriggers();
+        initThemeToggle();
         initForms();
         initRoleVisibility();
     });

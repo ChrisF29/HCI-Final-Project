@@ -1,5 +1,13 @@
 <?php
 $activePage = $activePage ?? '';
+$isAuthenticated = is_authenticated();
+$activeRole = strtolower((string) ($_SESSION['role'] ?? 'guest'));
+$roleLabelMap = [
+    'client' => 'Client',
+    'business' => 'Business',
+    'admin' => 'Admin',
+];
+$activeRoleLabel = $roleLabelMap[$activeRole] ?? 'Guest';
 ?>
 <header class="topbar">
     <div class="container topbar-inner">
@@ -27,8 +35,15 @@ $activePage = $activePage ?? '';
                     Account
                 </button>
                 <div class="dropdown-menu" data-dropdown-menu>
-                    <a href="<?php echo e(url('pages/auth/login.php')); ?>">Login</a>
-                    <a href="<?php echo e(url('pages/auth/register.php')); ?>">Register</a>
+                    <?php if ($isAuthenticated): ?>
+                        <p class="dropdown-label">Signed in as <?php echo e($activeRoleLabel); ?></p>
+                        <a href="<?php echo e(url(dashboard_path_for_role($activeRole))); ?>">Go to Dashboard</a>
+                        <hr>
+                        <a href="<?php echo e(url('pages/auth/logout.php')); ?>">Logout</a>
+                    <?php else: ?>
+                        <a href="<?php echo e(url('pages/auth/login.php')); ?>">Login</a>
+                        <a href="<?php echo e(url('pages/auth/register.php')); ?>">Register</a>
+                    <?php endif; ?>
                 </div>
             </div>
         </nav>
@@ -40,6 +55,9 @@ $activePage = $activePage ?? '';
             </form>
             <button class="icon-button" type="button" data-notify="You have 3 new alerts waiting.">
                 Alerts
+            </button>
+            <button class="icon-button" type="button" data-theme-toggle aria-pressed="false">
+                Night Mode
             </button>
         </div>
     </div>

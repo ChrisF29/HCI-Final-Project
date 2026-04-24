@@ -1,6 +1,51 @@
 <?php
 require_once dirname(__DIR__, 2) . '/includes/config.php';
 
+$loginError = '';
+$loginEmail = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $loginEmail = strtolower(trim((string) ($_POST['email'] ?? '')));
+    $password = (string) ($_POST['password'] ?? '');
+
+    if ($loginEmail === '' || $password === '') {
+        $loginError = 'Email and password are required.';
+    } elseif (!filter_var($loginEmail, FILTER_VALIDATE_EMAIL)) {
+        $loginError = 'Please enter a valid email address.';
+    } elseif (!db_available()) {
+        $loginError = 'Unable to connect to the database right now. Please try again.';
+    } else {
+        $user = db_one(
+            'SELECT id, role, status, password_hash FROM users WHERE email = :email LIMIT 1',
+            ['email' => $loginEmail]
+        );
+
+        $passwordHash = (string) ($user['password_hash'] ?? '');
+        $status = strtolower((string) ($user['status'] ?? 'pending'));
+        $role = strtolower((string) ($user['role'] ?? 'guest'));
+
+        if (!$user || $passwordHash === '' || !password_verify($password, $passwordHash)) {
+            $loginError = 'Invalid email or password.';
+        } elseif (!in_array($status, ['active', 'verified'], true)) {
+            $loginError = 'Your account is not active yet. Please contact support.';
+        } else {
+            session_regenerate_id(true);
+            $_SESSION['user_id'] = (int) ($user['id'] ?? 0);
+            $_SESSION['role'] = $role;
+
+            $redirectMap = [
+                'client' => 'pages/user/dashboard.php',
+                'business' => 'pages/business/dashboard.php',
+                'admin' => 'pages/admin/dashboard.php',
+            ];
+
+            $redirectTo = $redirectMap[$role] ?? 'pages/home.php';
+            header('Location: ' . url($redirectTo));
+            exit;
+        }
+    }
+}
+
 $pageTitle = 'Login';
 $activePage = '';
 
@@ -26,11 +71,15 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                 Password: Admin123!
             </div>
 
-            <form action="#" method="POST" data-validate class="section-stack">
+            <?php if ($loginError !== ''): ?>
+                <div class="notice-item" role="alert"><?php echo e($loginError); ?></div>
+            <?php endif; ?>
+
+            <form action="<?php echo e(url('pages/auth/login.php')); ?>" method="POST" data-validate data-allow-submit class="section-stack">
                 <div class="form-grid full">
                     <div class="form-field">
                         <label for="login-email">Email Address</label>
-                        <input id="login-email" type="email" name="email" required>
+                        <input id="login-email" type="email" name="email" value="<?php echo e($loginEmail); ?>" required>
                         <small class="field-error" data-error-for="email"></small>
                     </div>
                     <div class="form-field">
