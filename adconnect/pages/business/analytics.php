@@ -61,7 +61,7 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                                 <td><?php echo e((string) ($campaignRow['name'] ?? 'Campaign')); ?></td>
                                 <td><?php echo e(number_format((float) ($campaignRow['ctr'] ?? 0), 2)); ?>%</td>
                                 <td><?php echo e((string) ((int) ($campaignRow['leads'] ?? 0))); ?></td>
-                                <td><span class="badge <?php echo e(badge_class_for_status((string) ($campaignRow['status'] ?? '')); ?>"><?php echo e(ucfirst((string) ($campaignRow['status'] ?? 'planned'))); ?></span></td>
+                                <td><span class="badge <?php echo e(badge_class_for_status((string) ($campaignRow['status'] ?? ''))); ?>"><?php echo e(ucfirst((string) ($campaignRow['status'] ?? 'planned'))); ?></span></td>
                             </tr>
                         <?php endforeach; ?>
                         <?php if (empty($campaignRows)): ?>

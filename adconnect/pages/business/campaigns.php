@@ -34,7 +34,7 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                     <article class="card">
                         <div class="card-top">
                             <h3><?php echo e((string) ($campaign['name'] ?? 'Campaign')); ?></h3>
-                            <span class="badge <?php echo e(badge_class_for_status((string) ($campaign['status'] ?? '')); ?>"><?php echo e($statusLabel); ?></span>
+                            <span class="badge <?php echo e(badge_class_for_status((string) ($campaign['status'] ?? ''))); ?>"><?php echo e($statusLabel); ?></span>
                         </div>
                         <p>
                             Owner: <?php echo e((string) ($campaign['owner_name'] ?? 'Unassigned')); ?>

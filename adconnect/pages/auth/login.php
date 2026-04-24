@@ -3,6 +3,7 @@ require_once dirname(__DIR__, 2) . '/includes/config.php';
 
 $loginError = '';
 $loginEmail = '';
+$registeredNotice = isset($_GET['registered']) && $_GET['registered'] === '1';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $loginEmail = strtolower(trim((string) ($_POST['email'] ?? '')));
@@ -70,6 +71,10 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                 Email: admin@adconnect.local<br>
                 Password: Admin123!
             </div>
+
+            <?php if ($registeredNotice): ?>
+                <div class="notice-item" role="status">Registration successful. You can now log in.</div>
+            <?php endif; ?>
 
             <?php if ($loginError !== ''): ?>
                 <div class="notice-item" role="alert"><?php echo e($loginError); ?></div>

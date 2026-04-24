@@ -47,7 +47,7 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                                 <td><?php echo e((string) ($inquiry['client_name'] ?? 'Client')); ?></td>
                                 <td><?php echo e((string) ($inquiry['campaign_need'] ?? 'Campaign request')); ?></td>
                                 <td><?php echo e(money((float) ($inquiry['budget_amount'] ?? 0))); ?></td>
-                                <td><span class="badge <?php echo e(badge_class_for_status((string) ($inquiry['status'] ?? '')); ?>"><?php echo e(ucfirst((string) ($inquiry['status'] ?? 'pending'))); ?></span></td>
+                                <td><span class="badge <?php echo e(badge_class_for_status((string) ($inquiry['status'] ?? ''))); ?>"><?php echo e(ucfirst((string) ($inquiry['status'] ?? 'pending'))); ?></span></td>
                             </tr>
                         <?php endforeach; ?>
                         <?php if (empty($inquiries)): ?>
