@@ -24,14 +24,35 @@
                 return;
             }
 
+            trigger.setAttribute('aria-expanded', 'false');
+
             trigger.addEventListener("click", (event) => {
                 event.stopPropagation();
-                menu.classList.toggle("is-open");
+                const willOpen = !menu.classList.contains("is-open");
+
+                selectAll('[data-dropdown-menu].is-open').forEach((openMenu) => {
+                    openMenu.classList.remove("is-open");
+                    const parent = openMenu.closest('[data-dropdown]');
+                    const parentTrigger = parent ? selectOne('[data-dropdown-toggle]', parent) : null;
+                    if (parentTrigger) {
+                        parentTrigger.setAttribute('aria-expanded', 'false');
+                    }
+                });
+
+                menu.classList.toggle("is-open", willOpen);
+                trigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
             });
         });
 
         document.addEventListener("click", () => {
-            selectAll('[data-dropdown-menu].is-open').forEach((menu) => menu.classList.remove("is-open"));
+            selectAll('[data-dropdown-menu].is-open').forEach((menu) => {
+                menu.classList.remove("is-open");
+                const parent = menu.closest('[data-dropdown]');
+                const trigger = parent ? selectOne('[data-dropdown-toggle]', parent) : null;
+                if (trigger) {
+                    trigger.setAttribute('aria-expanded', 'false');
+                }
+            });
         });
     }
 

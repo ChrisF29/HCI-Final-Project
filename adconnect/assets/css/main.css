@@ -211,6 +211,24 @@ button {
     position: relative;
 }
 
+.dropdown-toggle {
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    font: inherit;
+    line-height: 1;
+}
+
+.dropdown-toggle:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+}
+
+.dropdown-toggle[aria-expanded="true"] {
+    background: rgba(15, 118, 110, 0.12);
+    color: var(--brand-deep);
+}
+
 .dropdown-menu {
     position: absolute;
     top: calc(100% + 0.45rem);
@@ -286,6 +304,11 @@ button {
 body.theme-night .topbar {
     border-bottom: 1px solid rgba(42, 58, 79, 0.9);
     background: rgba(16, 24, 35, 0.88);
+}
+
+body.theme-night .dropdown-toggle[aria-expanded="true"] {
+    background: rgba(45, 212, 191, 0.16);
+    color: #d6fff8;
 }
 
 body.theme-night .page-hero {
