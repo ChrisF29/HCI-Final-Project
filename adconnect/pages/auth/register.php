@@ -188,7 +188,7 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                     </div>
                     <div class="form-field">
                         <label for="register-company">Company Name</label>
-                        <input id="register-company" name="company_name" value="<?php echo e($form['company_name']); ?>" required>
+                        <input id="register-company" name="company_name" value="<?php echo e($form['company_name']); ?>" data-required-when="business" data-required-source="account_type">
                         <small class="field-error" data-error-for="company_name"></small>
                     </div>
                 </div>

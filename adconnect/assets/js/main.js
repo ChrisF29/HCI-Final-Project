@@ -213,9 +213,57 @@
         return !error;
     }
 
+    function initConditionalRequired(form) {
+        const conditionalFields = selectAll('[data-required-when]', form);
+        if (conditionalFields.length === 0) {
+            return;
+        }
+
+        const syncField = (field) => {
+            const requiredWhen = (field.getAttribute('data-required-when') || '').trim().toLowerCase();
+            const sourceName = (field.getAttribute('data-required-source') || 'account_type').trim();
+            const source = selectOne(`[name="${sourceName}"]`, form);
+
+            if (!source || !requiredWhen) {
+                return;
+            }
+
+            const sourceValue = String(source.value || '').trim().toLowerCase();
+            const isRequired = sourceValue === requiredWhen;
+            field.toggleAttribute('required', isRequired);
+
+            if (!isRequired) {
+                field.classList.remove('is-invalid');
+
+                const fieldName = field.getAttribute('name') || '';
+                const errorContainer = selectOne(`[data-error-for="${fieldName}"]`, form);
+                if (errorContainer) {
+                    errorContainer.textContent = '';
+                }
+            }
+        };
+
+        conditionalFields.forEach((field) => {
+            syncField(field);
+
+            const sourceName = (field.getAttribute('data-required-source') || 'account_type').trim();
+            const source = selectOne(`[name="${sourceName}"]`, form);
+            if (!source) {
+                return;
+            }
+
+            source.addEventListener('change', () => {
+                syncField(field);
+                validateField(field, form);
+            });
+        });
+    }
+
     function initForms() {
         selectAll('form[data-validate]').forEach((form) => {
             const inputs = selectAll('input, select, textarea', form);
+
+            initConditionalRequired(form);
 
             inputs.forEach((input) => {
                 input.addEventListener('blur', () => {

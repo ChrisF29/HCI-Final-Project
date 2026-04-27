@@ -11,6 +11,8 @@ $inquiryForm = [
     'project_brief' => '',
 ];
 
+$showInquiryModal = false;
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $inquiryForm['full_name'] = trim((string) ($_POST['full_name'] ?? ''));
     $inquiryForm['email'] = strtolower(trim((string) ($_POST['email'] ?? '')));
@@ -50,6 +52,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $inquiryError = 'We could not submit your inquiry. Please try again.';
     }
 }
+
+$showInquiryModal = $inquiryStatus !== '' || $inquiryError !== '';
 
 $pageTitle = 'Home';
 $activePage = 'home';
@@ -150,7 +154,7 @@ require_once dirname(__DIR__) . '/includes/navbar.php';
     </div>
 </main>
 
-<div class="modal" data-modal="inquiry-modal" aria-hidden="true">
+<div class="modal <?php echo $showInquiryModal ? 'is-open' : ''; ?>" data-modal="inquiry-modal" aria-hidden="<?php echo $showInquiryModal ? 'false' : 'true'; ?>">
     <div class="modal-card">
         <div class="modal-head">
             <h3>Submit Campaign Inquiry</h3>
