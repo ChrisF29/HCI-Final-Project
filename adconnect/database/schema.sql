@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS campaigns (
     owner_name VARCHAR(120) DEFAULT NULL,
     name VARCHAR(180) NOT NULL,
     objective ENUM('awareness', 'engagement', 'sales', 'leads') NOT NULL DEFAULT 'awareness',
-    status ENUM('planned', 'review', 'live', 'paused', 'archived') NOT NULL DEFAULT 'planned',
+    status ENUM('planned', 'live', 'paused', 'archived') NOT NULL DEFAULT 'planned',
     budget_amount DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
     start_date DATE DEFAULT NULL,
     end_date DATE DEFAULT NULL,
@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS ads (
     title VARCHAR(180) NOT NULL,
     channel ENUM('social', 'search', 'video', 'events') NOT NULL,
     location VARCHAR(120) DEFAULT NULL,
-    status ENUM('planned', 'review', 'live', 'paused', 'rejected') NOT NULL DEFAULT 'planned',
+    status ENUM('planned', 'live', 'paused', 'rejected') NOT NULL DEFAULT 'planned',
     objective ENUM('awareness', 'engagement', 'sales', 'leads') NOT NULL DEFAULT 'awareness',
     budget_amount DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
     description TEXT,
@@ -198,6 +198,20 @@ CREATE TABLE IF NOT EXISTS support_requests (
     CONSTRAINT fk_support_requests_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
     INDEX idx_support_requests_status (status)
 ) ENGINE=InnoDB;
+
+UPDATE campaigns
+SET status = 'planned'
+WHERE status = 'review';
+
+UPDATE ads
+SET status = 'live'
+WHERE status = 'review';
+
+ALTER TABLE campaigns
+MODIFY status ENUM('planned', 'live', 'paused', 'archived') NOT NULL DEFAULT 'planned';
+
+ALTER TABLE ads
+MODIFY status ENUM('planned', 'live', 'paused', 'rejected') NOT NULL DEFAULT 'planned';
 
 INSERT IGNORE INTO users (
     first_name,

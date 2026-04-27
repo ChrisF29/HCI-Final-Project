@@ -23,20 +23,18 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                     <span>Admin Dashboard</span>
                 </nav>
                 <h1>Platform control center</h1>
-                <p>Track moderation queues, user activity, approvals, and compliance indicators.</p>
+                <p>Track business approvals, user activity, and compliance indicators.</p>
             </section>
 
             <section class="metrics">
                 <article class="metric-card"><small>Total Users</small><strong data-counter="<?php echo e((string) ($adminMetrics['total_users'] ?? 0)); ?>">0</strong></article>
                 <article class="metric-card"><small>Pending Approvals</small><strong data-counter="<?php echo e((string) ($adminMetrics['pending_approvals'] ?? 0)); ?>">0</strong></article>
-                <article class="metric-card"><small>Ads for Review</small><strong data-counter="<?php echo e((string) ($adminMetrics['ads_for_review'] ?? 0)); ?>">0</strong></article>
                 <article class="metric-card"><small>Open Reports</small><strong data-counter="<?php echo e((string) ($adminMetrics['open_reports'] ?? 0)); ?>">0</strong></article>
             </section>
 
             <section class="card progress-wrap">
                 <h3>Operational health</h3>
                 <div class="progress-line"><small>Approval throughput</small><div class="meter" data-meter="<?php echo e((string) ($adminMetrics['approval_throughput'] ?? 0)); ?>"><span></span></div></div>
-                <div class="progress-line"><small>Moderation SLA</small><div class="meter" data-meter="<?php echo e((string) ($adminMetrics['moderation_sla'] ?? 0)); ?>"><span></span></div></div>
                 <div class="progress-line"><small>Resolved reports</small><div class="meter" data-meter="<?php echo e((string) ($adminMetrics['resolved_reports'] ?? 0)); ?>"><span></span></div></div>
             </section>
 

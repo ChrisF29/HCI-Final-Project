@@ -219,6 +219,49 @@ function fetch_moderation_ad_detail(int $adId): ?array
     return $row;
 }
 
+function fetch_business_ad_detail(int $adId, int $businessId): ?array
+{
+    if ($adId <= 0 || $businessId <= 0) {
+        return null;
+    }
+
+    $row = db_one(
+        "SELECT
+            a.id,
+            a.title,
+            a.status,
+            a.channel,
+            COALESCE(a.location, 'Unspecified') AS location,
+            a.objective,
+            a.budget_amount,
+            COALESCE(a.description, 'No campaign description provided.') AS description,
+            COALESCE(a.moderation_notes, 'No moderation notes yet.') AS moderation_notes,
+            a.created_at,
+            a.updated_at,
+            a.published_at,
+            COALESCE(bp.business_name, 'Unknown business') AS owner_name
+        FROM ads a
+        LEFT JOIN business_profiles bp ON bp.id = a.business_id
+        WHERE a.id = :id
+          AND a.business_id = :business_id
+        LIMIT 1",
+        [
+            'id' => $adId,
+            'business_id' => $businessId,
+        ]
+    );
+
+    if (!$row) {
+        return null;
+    }
+
+    $row['budget_amount'] = (float) ($row['budget_amount'] ?? 0);
+    $row['status'] = strtolower((string) ($row['status'] ?? 'planned'));
+    $row['channel'] = strtolower((string) ($row['channel'] ?? 'social'));
+
+    return $row;
+}
+
 function fetch_notifications(string $role, ?int $userId = null, int $limit = 8): array
 {
     $limit = max(1, min(50, $limit));
@@ -636,7 +679,6 @@ function fetch_dashboard_metrics_admin(): array
 {
     $totalUsers = db_count('SELECT COUNT(*) FROM users');
     $pendingApprovals = db_count("SELECT COUNT(*) FROM business_profiles WHERE approval_status = 'pending'");
-    $adsForReview = db_count("SELECT COUNT(*) FROM ads WHERE status = 'review'");
     $openReports = db_count("SELECT COUNT(*) FROM reports WHERE status IN ('open', 'investigating')");
 
     $approvedProfiles = db_count("SELECT COUNT(*) FROM business_profiles WHERE approval_status = 'approved'");
@@ -650,17 +692,11 @@ function fetch_dashboard_metrics_admin(): array
     $totalReports = db_count('SELECT COUNT(*) FROM reports');
     $resolvedRate = $totalReports > 0 ? pct(($resolvedReports / $totalReports) * 100) : 0;
 
-    $liveAds = db_count("SELECT COUNT(*) FROM ads WHERE status = 'live'");
-    $moderatedPool = $liveAds + $adsForReview;
-    $moderationSla = $moderatedPool > 0 ? pct(($liveAds / $moderatedPool) * 100) : 0;
-
     return [
         'total_users' => $totalUsers,
         'pending_approvals' => $pendingApprovals,
-        'ads_for_review' => $adsForReview,
         'open_reports' => $openReports,
         'approval_throughput' => $approvalThroughput,
-        'moderation_sla' => $moderationSla,
         'resolved_reports' => $resolvedRate,
     ];
 }
@@ -706,24 +742,23 @@ function fetch_dashboard_metrics_business(?int $businessId): array
         ['business_id' => $businessId]
     ) ?? 0);
 
-    $approvedAds = db_count(
+    $liveAds = db_count(
         "SELECT COUNT(*)
          FROM ads
          WHERE business_id = :business_id
-           AND status IN ('live', 'planned')",
+           AND status = 'live'",
         ['business_id' => $businessId]
     );
 
-    $reviewAds = db_count(
+    $totalAds = db_count(
         "SELECT COUNT(*)
          FROM ads
-         WHERE business_id = :business_id
-           AND status = 'review'",
+         WHERE business_id = :business_id",
         ['business_id' => $businessId]
     );
 
-    $approvalRate = ($approvedAds + $reviewAds) > 0
-        ? pct(($approvedAds / ($approvedAds + $reviewAds)) * 100)
+    $approvalRate = $totalAds > 0
+        ? pct(($liveAds / $totalAds) * 100)
         : 0;
 
     $repliedInquiries = db_count(

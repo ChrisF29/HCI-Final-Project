@@ -16,6 +16,9 @@ $activePage = '';
 $sidebarRole = 'business';
 $sidebarPage = 'manage-ads';
 $businessId = active_business_profile_id();
+$previewId = query_int('preview_id');
+$previewError = '';
+$previewAd = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $adForm['ad_title'] = trim((string) ($_POST['ad_title'] ?? ''));
@@ -120,11 +123,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'title' => $adForm['ad_title'],
                     'channel' => $adForm['ad_channel'],
                     'location' => 'Unspecified',
-                    'status' => 'review',
+                    'status' => 'live',
                     'objective' => $adForm['ad_objective'],
                     'budget_amount' => $budgetAmount,
                     'description' => $adForm['ad_description'],
-                    'moderation_notes' => 'Submitted via manage ads form',
+                    'moderation_notes' => 'Published via manage ads form',
                 ]);
 
                 $connection->commit();
@@ -143,6 +146,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $businessAds = fetch_ads_feed(60, $businessId);
 
+if ($previewId !== null) {
+    if ($businessId === null) {
+        $previewError = 'Business profile was not found.';
+    } else {
+        $previewAd = fetch_business_ad_detail($previewId, $businessId);
+        if (!$previewAd) {
+            $previewError = 'No campaign found for the selected preview entry.';
+        }
+    }
+}
+
 require_once dirname(__DIR__, 2) . '/includes/header.php';
 require_once dirname(__DIR__, 2) . '/includes/navbar.php';
 ?>
@@ -160,13 +174,13 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                     <span>Manage Ads</span>
                 </nav>
                 <h1>Create and monitor advertisements</h1>
-                <p>Upload campaigns with validation-ready forms and moderate publishing states.</p>
+                <p>Upload campaigns with validation-ready forms and monitor publishing states.</p>
             </section>
 
             <section class="card section-stack">
                 <h3>Upload New Advertisement</h3>
                 <?php if ($adStatus === 'created'): ?>
-                    <div class="notice-item" role="status">Advertisement submitted for review.</div>
+                    <div class="notice-item" role="status">Advertisement published successfully.</div>
                 <?php endif; ?>
                 <?php if ($adError !== ''): ?>
                     <div class="notice-item" role="alert"><?php echo e($adError); ?></div>
@@ -222,13 +236,38 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                 </form>
             </section>
 
-            <section class="card section-stack">
+            <?php if ($previewError !== ''): ?>
+                <div class="notice-item" role="alert"><?php echo e($previewError); ?></div>
+            <?php endif; ?>
+
+            <?php if ($previewAd): ?>
+                <section id="ad-preview" class="card section-stack">
+                    <h3>Campaign Preview</h3>
+                    <div class="chip-row">
+                        <span class="chip"><?php echo e(ucfirst((string) ($previewAd['status'] ?? 'planned'))); ?></span>
+                        <span class="chip"><?php echo e(ucfirst((string) ($previewAd['channel'] ?? 'social'))); ?></span>
+                    </div>
+                    <p><strong>Title:</strong> <?php echo e((string) ($previewAd['title'] ?? 'Untitled ad')); ?></p>
+                    <p><strong>Objective:</strong> <?php echo e(ucfirst((string) ($previewAd['objective'] ?? 'awareness'))); ?></p>
+                    <p><strong>Location:</strong> <?php echo e((string) ($previewAd['location'] ?? 'Unspecified')); ?></p>
+                    <p><strong>Budget:</strong> <?php echo e(money((float) ($previewAd['budget_amount'] ?? 0))); ?></p>
+                    <p><strong>Created:</strong> <?php echo e(format_date_label((string) ($previewAd['created_at'] ?? ''))); ?></p>
+                    <p><strong>Last Updated:</strong> <?php echo e(format_date_label((string) ($previewAd['updated_at'] ?? ''))); ?></p>
+                    <p><strong>Published:</strong> <?php echo e((string) ($previewAd['published_at'] ?? '') !== '' ? format_date_label((string) $previewAd['published_at']) : 'Not published'); ?></p>
+                    <p><?php echo e((string) ($previewAd['description'] ?? 'No campaign description provided.')); ?></p>
+                    <p><strong>Moderation Notes:</strong> <?php echo e((string) ($previewAd['moderation_notes'] ?? 'No moderation notes yet.')); ?></p>
+                    <div class="hero-actions">
+                        <a class="btn-secondary" href="<?php echo e(url('pages/business/manage-ads.php#ads-list')); ?>">Close Preview</a>
+                    </div>
+                </section>
+            <?php endif; ?>
+
+            <section id="ads-list" class="card section-stack">
                 <div class="toolbar">
                     <input type="search" data-search-input placeholder="Search ad title">
                     <select name="status" data-filter-select>
                         <option value="all">All Status</option>
                         <option value="live">Live</option>
-                        <option value="review">Review</option>
                         <option value="planned">Planned</option>
                     </select>
                     <button class="btn-ghost" type="button" data-filter-reset>Reset</button>
@@ -236,7 +275,7 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                 <p><strong><span data-filter-count>0</span></strong> ads displayed.</p>
                 <div class="card-grid">
                     <?php foreach ($businessAds as $ad): ?>
-                        <?php echo render_ad_card($ad); ?>
+                        <?php echo render_ad_card($ad, url('pages/business/manage-ads.php?preview_id=' . (string) ((int) ($ad['id'] ?? 0)) . '#ad-preview')); ?>
                     <?php endforeach; ?>
                 </div>
                 <div class="empty-state <?php echo !empty($businessAds) ? 'is-hidden' : ''; ?>" data-filter-empty data-empty-state>

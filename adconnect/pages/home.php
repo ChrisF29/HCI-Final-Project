@@ -12,6 +12,9 @@ $inquiryForm = [
 ];
 
 $showInquiryModal = false;
+$previewId = query_int('preview_id');
+$previewError = '';
+$previewAd = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $inquiryForm['full_name'] = trim((string) ($_POST['full_name'] ?? ''));
@@ -61,6 +64,13 @@ $clientUserId = active_client_user_id();
 $featuredListings = fetch_business_listings(8, $clientUserId, false);
 $trendingAds = fetch_ads_feed(8, null, 'live');
 
+if ($previewId !== null) {
+    $previewAd = fetch_moderation_ad_detail($previewId);
+    if (!$previewAd) {
+        $previewError = 'No campaign found for the selected preview entry.';
+    }
+}
+
 require_once dirname(__DIR__) . '/includes/header.php';
 require_once dirname(__DIR__) . '/includes/navbar.php';
 ?>
@@ -100,11 +110,33 @@ require_once dirname(__DIR__) . '/includes/navbar.php';
             </div>
         </section>
 
-        <section class="card section-stack" data-search-scope data-filter-scope>
+        <section id="trending-ads-feed" class="card section-stack" data-search-scope data-filter-scope>
             <div class="inline-split">
                 <h2>Trending Advertisement Feed</h2>
                 <small><span data-filter-count>0</span> campaigns visible</small>
             </div>
+            <?php if ($previewError !== ''): ?>
+                <div class="notice-item" role="alert"><?php echo e($previewError); ?></div>
+            <?php endif; ?>
+            <?php if ($previewAd): ?>
+                <section id="ad-preview" class="card section-stack">
+                    <h3>Campaign Preview</h3>
+                    <div class="chip-row">
+                        <span class="chip"><?php echo e(ucfirst((string) ($previewAd['status'] ?? 'planned'))); ?></span>
+                        <span class="chip"><?php echo e(ucfirst((string) ($previewAd['channel'] ?? 'social'))); ?></span>
+                        <span class="chip"><?php echo e((string) ($previewAd['category_name'] ?? 'Uncategorized')); ?></span>
+                    </div>
+                    <p><strong>Title:</strong> <?php echo e((string) ($previewAd['title'] ?? 'Untitled ad')); ?></p>
+                    <p><strong>Owner:</strong> <?php echo e((string) ($previewAd['owner_name'] ?? 'Unknown owner')); ?></p>
+                    <p><strong>Objective:</strong> <?php echo e(ucfirst((string) ($previewAd['objective'] ?? 'awareness'))); ?></p>
+                    <p><strong>Location:</strong> <?php echo e((string) ($previewAd['location'] ?? 'Unspecified')); ?></p>
+                    <p><strong>Budget:</strong> <?php echo e(money((float) ($previewAd['budget_amount'] ?? 0))); ?></p>
+                    <p><?php echo e((string) ($previewAd['description'] ?? 'No campaign description provided.')); ?></p>
+                    <div class="hero-actions">
+                        <a class="btn-secondary" href="<?php echo e(url('pages/home.php#trending-ads-feed')); ?>">Close Preview</a>
+                    </div>
+                </section>
+            <?php endif; ?>
             <div class="toolbar">
                 <input type="search" data-search-input placeholder="Search campaign title or owner">
                 <select name="channel" data-filter-select>
@@ -121,7 +153,7 @@ require_once dirname(__DIR__) . '/includes/navbar.php';
             </div>
             <div class="card-grid">
                 <?php foreach ($trendingAds as $ad): ?>
-                    <?php echo render_ad_card($ad); ?>
+                    <?php echo render_ad_card($ad, url('pages/home.php?preview_id=' . (string) ((int) ($ad['id'] ?? 0)) . '#ad-preview')); ?>
                 <?php endforeach; ?>
             </div>
             <div class="empty-state <?php echo !empty($trendingAds) ? 'is-hidden' : ''; ?>" data-filter-empty data-empty-state>

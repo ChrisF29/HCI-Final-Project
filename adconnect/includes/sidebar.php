@@ -22,7 +22,6 @@ $menus = [
         ['key' => 'dashboard', 'label' => 'Dashboard', 'href' => 'pages/admin/dashboard.php?role=admin'],
         ['key' => 'users', 'label' => 'Users', 'href' => 'pages/admin/users.php?role=admin'],
         ['key' => 'approvals', 'label' => 'Approvals', 'href' => 'pages/admin/approvals.php?role=admin'],
-        ['key' => 'ads-moderation', 'label' => 'Ads Moderation', 'href' => 'pages/admin/ads-moderation.php?role=admin'],
         ['key' => 'categories', 'label' => 'Categories', 'href' => 'pages/admin/categories.php?role=admin'],
         ['key' => 'reports', 'label' => 'Reports', 'href' => 'pages/admin/reports.php?role=admin'],
     ],

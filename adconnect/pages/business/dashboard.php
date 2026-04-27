@@ -25,7 +25,7 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                     <span>Business Dashboard</span>
                 </nav>
                 <h1>Business performance overview</h1>
-                <p>Monitor campaign delivery, inquiries, and ad moderation status.</p>
+                <p>Monitor campaign delivery, inquiries, and ad performance status.</p>
                 <p><small>Report date: <span data-current-date></span></small></p>
             </section>
 
@@ -39,7 +39,7 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
             <section class="card progress-wrap">
                 <h3>Campaign Health</h3>
                 <div class="progress-line"><small>Lead Quality</small><div class="meter" data-meter="<?php echo e((string) ($businessMetrics['lead_quality'] ?? 0)); ?>"><span></span></div></div>
-                <div class="progress-line"><small>Ad Approval Rate</small><div class="meter" data-meter="<?php echo e((string) ($businessMetrics['ad_approval_rate'] ?? 0)); ?>"><span></span></div></div>
+                <div class="progress-line"><small>Ad Live Rate</small><div class="meter" data-meter="<?php echo e((string) ($businessMetrics['ad_approval_rate'] ?? 0)); ?>"><span></span></div></div>
                 <div class="progress-line"><small>Response SLA</small><div class="meter" data-meter="<?php echo e((string) ($businessMetrics['response_sla'] ?? 0)); ?>"><span></span></div></div>
             </section>
 
