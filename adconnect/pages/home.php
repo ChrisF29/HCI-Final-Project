@@ -11,19 +11,38 @@ $inquiryForm = [
     'project_brief' => '',
 ];
 
+$currentUserId = current_user_id();
+$isClientUser = has_role('client') && $currentUserId !== null;
+$clientContact = $isClientUser ? current_user_contact_profile() : null;
+
+if ($isClientUser && $clientContact) {
+    $inquiryForm['full_name'] = (string) ($clientContact['name'] ?? '');
+    $inquiryForm['email'] = (string) ($clientContact['email'] ?? '');
+}
+
 $showInquiryModal = false;
 $previewId = query_int('preview_id');
 $previewError = '';
 $previewAd = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $inquiryForm['full_name'] = trim((string) ($_POST['full_name'] ?? ''));
-    $inquiryForm['email'] = strtolower(trim((string) ($_POST['email'] ?? '')));
     $inquiryForm['company_name'] = trim((string) ($_POST['company_name'] ?? ''));
     $inquiryForm['budget_range'] = trim((string) ($_POST['budget_range'] ?? ''));
     $inquiryForm['project_brief'] = trim((string) ($_POST['project_brief'] ?? ''));
 
-    if ($inquiryForm['full_name'] === '' || $inquiryForm['company_name'] === '' || $inquiryForm['budget_range'] === '' || $inquiryForm['project_brief'] === '') {
+    if ($isClientUser && $clientContact) {
+        $inquiryForm['full_name'] = (string) ($clientContact['name'] ?? '');
+        $inquiryForm['email'] = (string) ($clientContact['email'] ?? '');
+    } else {
+        $inquiryForm['full_name'] = trim((string) ($_POST['full_name'] ?? ''));
+        $inquiryForm['email'] = strtolower(trim((string) ($_POST['email'] ?? '')));
+    }
+
+    if ($inquiryForm['company_name'] === '' || $inquiryForm['budget_range'] === '' || $inquiryForm['project_brief'] === '') {
+        $inquiryError = 'Please complete all inquiry fields.';
+    } elseif ($isClientUser && !$clientContact) {
+        $inquiryError = 'Unable to load your account contact details. Please update your profile and try again.';
+    } elseif (!$isClientUser && $inquiryForm['full_name'] === '') {
         $inquiryError = 'Please complete all inquiry fields.';
     } elseif (!filter_var($inquiryForm['email'], FILTER_VALIDATE_EMAIL)) {
         $inquiryError = 'Please provide a valid email address.';
@@ -38,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'INSERT INTO support_requests (user_id, name, email, topic, message, status)
              VALUES (:user_id, :name, :email, :topic, :message, :status)',
             [
-                'user_id' => current_user_id(),
+                'user_id' => $currentUserId,
                 'name' => $inquiryForm['full_name'],
                 'email' => $inquiryForm['email'],
                 'topic' => 'campaign-inquiry',
@@ -196,18 +215,24 @@ require_once dirname(__DIR__) . '/includes/navbar.php';
             <div class="notice-item" role="alert"><?php echo e($inquiryError); ?></div>
         <?php endif; ?>
         <form action="<?php echo e(url('pages/home.php')); ?>" method="POST" data-validate data-allow-submit class="section-stack">
-            <div class="form-grid">
-                <div class="form-field">
-                    <label for="inquiry-name">Full Name</label>
-                    <input id="inquiry-name" name="full_name" value="<?php echo e($inquiryForm['full_name']); ?>" required>
-                    <small class="field-error" data-error-for="full_name"></small>
+            <?php if ($isClientUser && $clientContact): ?>
+                <div class="notice-item" role="status">
+                    Sending inquiry as <?php echo e((string) ($clientContact['name'] ?? 'Client')); ?> (<?php echo e((string) ($clientContact['email'] ?? '')); ?>).
                 </div>
-                <div class="form-field">
-                    <label for="inquiry-email">Email Address</label>
-                    <input id="inquiry-email" type="email" name="email" value="<?php echo e($inquiryForm['email']); ?>" required>
-                    <small class="field-error" data-error-for="email"></small>
+            <?php else: ?>
+                <div class="form-grid">
+                    <div class="form-field">
+                        <label for="inquiry-name">Full Name</label>
+                        <input id="inquiry-name" name="full_name" value="<?php echo e($inquiryForm['full_name']); ?>" required>
+                        <small class="field-error" data-error-for="full_name"></small>
+                    </div>
+                    <div class="form-field">
+                        <label for="inquiry-email">Email Address</label>
+                        <input id="inquiry-email" type="email" name="email" value="<?php echo e($inquiryForm['email']); ?>" required>
+                        <small class="field-error" data-error-for="email"></small>
+                    </div>
                 </div>
-            </div>
+            <?php endif; ?>
             <div class="form-grid">
                 <div class="form-field">
                     <label for="inquiry-company">Company</label>

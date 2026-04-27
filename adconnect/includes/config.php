@@ -85,6 +85,40 @@ function current_user_id(): ?int
     return (int) $_SESSION['user_id'];
 }
 
+function current_user_contact_profile(): ?array
+{
+    $userId = current_user_id();
+    if ($userId === null || !db_available()) {
+        return null;
+    }
+
+    $user = db_one(
+        "SELECT
+            COALESCE(NULLIF(display_name, ''), CONCAT(first_name, ' ', last_name), email) AS full_name,
+            email
+         FROM users
+         WHERE id = :id
+         LIMIT 1",
+        ['id' => $userId]
+    );
+
+    if (!$user) {
+        return null;
+    }
+
+    $name = trim((string) ($user['full_name'] ?? ''));
+    $email = strtolower(trim((string) ($user['email'] ?? '')));
+
+    if ($name === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return null;
+    }
+
+    return [
+        'name' => $name,
+        'email' => $email,
+    ];
+}
+
 function dashboard_path_for_role(?string $role = null): string
 {
     $resolvedRole = strtolower((string) ($role ?? $_SESSION['role'] ?? 'guest'));

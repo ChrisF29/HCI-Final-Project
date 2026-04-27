@@ -543,16 +543,29 @@ function fetch_messages_for_client(?int $clientUserId, int $limit = 50): array
         "SELECT
             m.id,
             COALESCE(bp.business_name, 'Business') AS business_name,
+            COALESCE(i.campaign_need, m.subject, 'No inquiry topic') AS inquiry_topic,
+            i.status AS inquiry_status,
+            i.budget_amount,
             m.subject,
             m.message_status,
-            m.created_at
+            m.created_at,
+            i.updated_at AS inquiry_updated_at,
+            CASE
+                WHEN m.sender_user_id = :direction_client_user_id THEN 'sent'
+                ELSE 'received'
+            END AS message_direction
         FROM messages m
         LEFT JOIN inquiries i ON i.id = m.inquiry_id
         LEFT JOIN business_profiles bp ON bp.id = i.business_id
-        WHERE m.recipient_user_id = :client_user_id
+        WHERE m.recipient_user_id = :recipient_client_user_id
+           OR m.sender_user_id = :sender_client_user_id
         ORDER BY m.created_at DESC, m.id DESC
         LIMIT {$limit}",
-        ['client_user_id' => $clientUserId]
+        [
+            'direction_client_user_id' => $clientUserId,
+            'recipient_client_user_id' => $clientUserId,
+            'sender_client_user_id' => $clientUserId,
+        ]
     );
 }
 
