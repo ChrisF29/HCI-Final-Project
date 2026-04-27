@@ -6,6 +6,16 @@ $activePage = '';
 $sidebarRole = 'admin';
 $sidebarPage = 'ads-moderation';
 $moderationAds = fetch_ads_feed(80);
+$previewId = query_int('preview_id');
+$previewError = '';
+$previewAd = null;
+
+if ($previewId !== null) {
+    $previewAd = fetch_moderation_ad_detail($previewId);
+    if (!$previewAd) {
+        $previewError = 'No campaign found for the selected preview entry.';
+    }
+}
 
 require_once dirname(__DIR__, 2) . '/includes/header.php';
 require_once dirname(__DIR__, 2) . '/includes/navbar.php';
@@ -27,6 +37,34 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                 <p>Review campaign compliance and publication readiness.</p>
             </section>
 
+            <?php if ($previewError !== ''): ?>
+                <div class="notice-item" role="alert"><?php echo e($previewError); ?></div>
+            <?php endif; ?>
+
+            <?php if ($previewAd): ?>
+                <section class="card section-stack">
+                    <h2>Campaign Preview</h2>
+                    <div class="chip-row">
+                        <span class="chip"><?php echo e(ucfirst((string) ($previewAd['status'] ?? 'planned'))); ?></span>
+                        <span class="chip"><?php echo e(ucfirst((string) ($previewAd['channel'] ?? 'social'))); ?></span>
+                        <span class="chip"><?php echo e((string) ($previewAd['category_name'] ?? 'Uncategorized')); ?></span>
+                    </div>
+                    <p><strong>Title:</strong> <?php echo e((string) ($previewAd['title'] ?? 'Untitled ad')); ?></p>
+                    <p><strong>Owner:</strong> <?php echo e((string) ($previewAd['owner_name'] ?? 'Unknown owner')); ?></p>
+                    <p><strong>Objective:</strong> <?php echo e(ucfirst((string) ($previewAd['objective'] ?? 'awareness'))); ?></p>
+                    <p><strong>Location:</strong> <?php echo e((string) ($previewAd['location'] ?? 'Unspecified')); ?></p>
+                    <p><strong>Budget:</strong> <?php echo e(money((float) ($previewAd['budget_amount'] ?? 0))); ?></p>
+                    <p><strong>Created:</strong> <?php echo e(format_date_label((string) ($previewAd['created_at'] ?? ''))); ?></p>
+                    <p><strong>Last Updated:</strong> <?php echo e(format_date_label((string) ($previewAd['updated_at'] ?? ''))); ?></p>
+                    <p><strong>Published:</strong> <?php echo e((string) ($previewAd['published_at'] ?? '') !== '' ? format_date_label((string) $previewAd['published_at']) : 'Not published'); ?></p>
+                    <p><?php echo e((string) ($previewAd['description'] ?? 'No campaign description provided.')); ?></p>
+                    <p><strong>Moderation Notes:</strong> <?php echo e((string) ($previewAd['moderation_notes'] ?? 'No moderation notes yet.')); ?></p>
+                    <div class="hero-actions">
+                        <a class="btn-secondary" href="<?php echo e(url('pages/admin/ads-moderation.php')); ?>">Close Preview</a>
+                    </div>
+                </section>
+            <?php endif; ?>
+
             <section class="card section-stack">
                 <div class="toolbar">
                     <input type="search" data-search-input placeholder="Search campaign or owner">
@@ -41,7 +79,7 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                 <p><strong><span data-filter-count>0</span></strong> ads in current view.</p>
                 <div class="card-grid">
                     <?php foreach ($moderationAds as $ad): ?>
-                        <?php echo render_ad_card($ad); ?>
+                        <?php echo render_ad_card($ad, url('pages/admin/ads-moderation.php?preview_id=' . (string) ((int) ($ad['id'] ?? 0)))); ?>
                     <?php endforeach; ?>
                 </div>
                 <div class="empty-state <?php echo !empty($moderationAds) ? 'is-hidden' : ''; ?>" data-filter-empty data-empty-state>

@@ -59,7 +59,7 @@ $pageTitle = 'Home';
 $activePage = 'home';
 $clientUserId = active_client_user_id();
 $featuredListings = fetch_business_listings(8, $clientUserId, false);
-$trendingAds = fetch_ads_feed(8);
+$trendingAds = fetch_ads_feed(8, null, 'live');
 
 require_once dirname(__DIR__) . '/includes/header.php';
 require_once dirname(__DIR__) . '/includes/navbar.php';
@@ -115,10 +115,7 @@ require_once dirname(__DIR__) . '/includes/navbar.php';
                     <option value="events">Events</option>
                 </select>
                 <select name="status" data-filter-select>
-                    <option value="all">All Status</option>
                     <option value="live">Live</option>
-                    <option value="review">Review</option>
-                    <option value="planned">Planned</option>
                 </select>
                 <button class="btn-ghost" type="button" data-filter-reset>Reset</button>
             </div>

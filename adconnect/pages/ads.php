@@ -3,7 +3,7 @@ require_once dirname(__DIR__) . '/includes/config.php';
 
 $pageTitle = 'Ads Feed';
 $activePage = 'ads';
-$campaignAds = fetch_ads_feed(50);
+$campaignAds = fetch_ads_feed(50, null, 'live');
 $liveCampaignCount = 0;
 
 foreach ($campaignAds as $campaignAd) {
@@ -46,10 +46,7 @@ require_once dirname(__DIR__) . '/includes/navbar.php';
                             <option value="events">Events</option>
                         </select>
                         <select name="status" data-filter-select>
-                            <option value="all">All Status</option>
                             <option value="live">Live</option>
-                            <option value="review">Review</option>
-                            <option value="planned">Planned</option>
                         </select>
                         <button class="btn-ghost" type="button" data-filter-reset>Reset</button>
                     </div>

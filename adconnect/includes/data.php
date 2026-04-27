@@ -178,6 +178,47 @@ function fetch_ads_feed(int $limit = 24, ?int $businessId = null, ?string $statu
     return $rows;
 }
 
+function fetch_moderation_ad_detail(int $adId): ?array
+{
+    if ($adId <= 0) {
+        return null;
+    }
+
+    $row = db_one(
+        "SELECT
+            a.id,
+            a.title,
+            a.status,
+            a.channel,
+            COALESCE(a.location, 'Unspecified') AS location,
+            a.objective,
+            a.budget_amount,
+            COALESCE(a.description, 'No campaign description provided.') AS description,
+            COALESCE(a.moderation_notes, 'No moderation notes yet.') AS moderation_notes,
+            a.created_at,
+            a.updated_at,
+            a.published_at,
+            COALESCE(bp.business_name, 'Unknown business') AS owner_name,
+            COALESCE(c.name, 'Uncategorized') AS category_name
+        FROM ads a
+        LEFT JOIN business_profiles bp ON bp.id = a.business_id
+        LEFT JOIN categories c ON c.id = bp.category_id
+        WHERE a.id = :id
+        LIMIT 1",
+        ['id' => $adId]
+    );
+
+    if (!$row) {
+        return null;
+    }
+
+    $row['budget_amount'] = (float) ($row['budget_amount'] ?? 0);
+    $row['status'] = strtolower((string) ($row['status'] ?? 'planned'));
+    $row['channel'] = strtolower((string) ($row['channel'] ?? 'social'));
+
+    return $row;
+}
+
 function fetch_notifications(string $role, ?int $userId = null, int $limit = 8): array
 {
     $limit = max(1, min(50, $limit));
@@ -827,7 +868,7 @@ function render_listing_card(array $listing): string
     return $html;
 }
 
-function render_ad_card(array $ad): string
+function render_ad_card(array $ad, ?string $previewHref = null): string
 {
     $title = (string) ($ad['title'] ?? 'Untitled ad');
     $status = strtolower((string) ($ad['status'] ?? 'planned'));
@@ -856,7 +897,11 @@ function render_ad_card(array $ad): string
     $html .= '<p>' . e($objective . ' · ' . $location) . '</p>';
     $html .= '<div class="inline-split" style="margin-top:0.8rem">';
     $html .= '<small>' . e(money($budgetAmount)) . '</small>';
-    $html .= '<button class="btn-ghost" type="button" data-notify="Campaign detail panel is coming soon.">Preview</button>';
+    if ($previewHref !== null && $previewHref !== '') {
+        $html .= '<a class="btn-ghost" href="' . e($previewHref) . '">Preview</a>';
+    } else {
+        $html .= '<button class="btn-ghost" type="button" data-notify="Campaign detail panel is coming soon.">Preview</button>';
+    }
     $html .= '</div>';
     $html .= '</article>';
 
