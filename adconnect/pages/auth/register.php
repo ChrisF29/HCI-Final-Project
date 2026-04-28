@@ -5,6 +5,7 @@ $registerError = '';
 $form = [
     'account_type' => '',
     'company_name' => '',
+    'business_location' => '',
     'first_name' => '',
     'last_name' => '',
     'email' => '',
@@ -14,6 +15,7 @@ $form = [
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $form['account_type'] = strtolower(trim((string) ($_POST['account_type'] ?? '')));
     $form['company_name'] = trim((string) ($_POST['company_name'] ?? ''));
+    $form['business_location'] = trim((string) ($_POST['business_location'] ?? ''));
     $form['first_name'] = trim((string) ($_POST['first_name'] ?? ''));
     $form['last_name'] = trim((string) ($_POST['last_name'] ?? ''));
     $form['email'] = strtolower(trim((string) ($_POST['email'] ?? '')));
@@ -37,8 +39,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $registerError = 'Password confirmation does not match.';
     } elseif (!$termsAccepted) {
         $registerError = 'You must accept the terms and privacy policy.';
-    } elseif ($form['account_type'] === 'business' && $form['company_name'] === '') {
-        $registerError = 'Company name is required for business accounts.';
+    } elseif ($form['account_type'] === 'business' && ($form['company_name'] === '' || $form['business_location'] === '')) {
+        $registerError = 'Company name and location are required for business accounts.';
     } elseif (!db_available()) {
         $registerError = 'Unable to connect to the database right now. Please try again.';
     } else {
@@ -127,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $profileStatement->execute([
                             'user_id' => $userId,
                             'business_name' => $form['company_name'],
-                            'city' => 'Unspecified',
+                            'city' => $form['business_location'] !== '' ? $form['business_location'] : 'Unspecified',
                             'budget_tier' => 'mid',
                             'description' => 'Newly registered business profile.',
                             'contact_email' => $form['email'],
@@ -190,6 +192,11 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                         <label for="register-company">Company Name</label>
                         <input id="register-company" name="company_name" value="<?php echo e($form['company_name']); ?>" data-required-when="business" data-required-source="account_type">
                         <small class="field-error" data-error-for="company_name"></small>
+                    </div>
+                    <div class="form-field">
+                        <label for="register-location">Location</label>
+                        <input id="register-location" name="business_location" value="<?php echo e($form['business_location']); ?>" data-required-when="business" data-required-source="account_type">
+                        <small class="field-error" data-error-for="business_location"></small>
                     </div>
                 </div>
 

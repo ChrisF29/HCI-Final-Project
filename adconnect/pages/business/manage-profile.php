@@ -13,13 +13,14 @@ $businessId = active_business_profile_id();
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $businessName = trim((string) ($_POST['business_name'] ?? ''));
     $businessCategorySlug = strtolower(trim((string) ($_POST['business_category'] ?? '')));
+    $businessLocation = trim((string) ($_POST['business_location'] ?? ''));
     $contactEmail = strtolower(trim((string) ($_POST['contact_email'] ?? '')));
     $contactPhone = trim((string) ($_POST['contact_phone'] ?? ''));
     $businessDescription = trim((string) ($_POST['business_description'] ?? ''));
 
     if ($businessId === null) {
         $profileError = 'Business profile was not found.';
-    } elseif ($businessName === '' || $businessCategorySlug === '' || $contactPhone === '' || $businessDescription === '') {
+    } elseif ($businessName === '' || $businessCategorySlug === '' || $businessLocation === '' || $contactPhone === '' || $businessDescription === '') {
         $profileError = 'Please complete all required profile fields.';
     } elseif (!filter_var($contactEmail, FILTER_VALIDATE_EMAIL)) {
         $profileError = 'Please provide a valid contact email.';
@@ -34,6 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'UPDATE business_profiles
                  SET business_name = :business_name,
                      category_id = :category_id,
+                     city = :city,
                      contact_email = :contact_email,
                      contact_phone = :contact_phone,
                      description = :description
@@ -41,6 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 [
                     'business_name' => $businessName,
                     'category_id' => (int) $categoryId,
+                    'city' => $businessLocation,
                     'contact_email' => $contactEmail,
                     'contact_phone' => $contactPhone,
                     'description' => $businessDescription,
@@ -119,6 +122,11 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                             <label for="business-phone">Phone</label>
                             <input id="business-phone" name="contact_phone" value="<?php echo e((string) ($businessProfile['contact_phone'] ?? '')); ?>" required>
                             <small class="field-error" data-error-for="contact_phone"></small>
+                        </div>
+                        <div class="form-field">
+                            <label for="business-location">Location</label>
+                            <input id="business-location" name="business_location" value="<?php echo e((string) ($businessProfile['city'] ?? '')); ?>" required>
+                            <small class="field-error" data-error-for="business_location"></small>
                         </div>
                     </div>
 

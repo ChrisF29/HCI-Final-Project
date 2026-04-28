@@ -519,6 +519,8 @@ function fetch_inquiries_for_business(?int $businessId, int $limit = 50): array
             i.id,
             COALESCE(NULLIF(u.display_name, ''), CONCAT(u.first_name, ' ', u.last_name), u.email) AS client_name,
             i.campaign_need,
+            i.latest_subject,
+            i.latest_message,
             i.budget_amount,
             i.status,
             i.updated_at
@@ -528,6 +530,39 @@ function fetch_inquiries_for_business(?int $businessId, int $limit = 50): array
         ORDER BY i.updated_at DESC, i.id DESC
         LIMIT {$limit}",
         ['business_id' => $businessId]
+    );
+}
+
+function fetch_conversation_messages_for_business(?int $businessId, int $inquiryId, int $limit = 200): array
+{
+    if ($businessId === null || $inquiryId <= 0) {
+        return [];
+    }
+
+    $limit = max(1, min(300, $limit));
+
+    return db_all(
+        "SELECT
+            m.id,
+            m.sender_user_id,
+            m.recipient_user_id,
+            m.subject,
+            m.body,
+            m.message_status,
+            m.created_at,
+            i.client_user_id,
+            COALESCE(NULLIF(u.display_name, ''), CONCAT(u.first_name, ' ', u.last_name), u.email) AS client_name
+        FROM messages m
+        LEFT JOIN inquiries i ON i.id = m.inquiry_id
+        LEFT JOIN users u ON u.id = i.client_user_id
+        WHERE m.inquiry_id = :inquiry_id
+          AND i.business_id = :business_id
+        ORDER BY m.created_at ASC, m.id ASC
+        LIMIT {$limit}",
+        [
+            'inquiry_id' => $inquiryId,
+            'business_id' => $businessId,
+        ]
     );
 }
 
@@ -543,7 +578,7 @@ function fetch_messages_for_client(?int $clientUserId, int $limit = 50): array
         "SELECT
             m.id,
             COALESCE(bp.business_name, 'Business') AS business_name,
-            COALESCE(i.campaign_need, m.subject, 'No inquiry topic') AS inquiry_topic,
+            COALESCE(NULLIF(i.latest_message, ''), i.campaign_need, m.subject, 'No inquiry topic') AS inquiry_topic,
             i.status AS inquiry_status,
             i.budget_amount,
             m.subject,
@@ -557,14 +592,83 @@ function fetch_messages_for_client(?int $clientUserId, int $limit = 50): array
         FROM messages m
         LEFT JOIN inquiries i ON i.id = m.inquiry_id
         LEFT JOIN business_profiles bp ON bp.id = i.business_id
-        WHERE m.recipient_user_id = :recipient_client_user_id
+        WHERE i.client_user_id = :inquiry_client_user_id
+           OR m.recipient_user_id = :recipient_client_user_id
            OR m.sender_user_id = :sender_client_user_id
         ORDER BY m.created_at DESC, m.id DESC
         LIMIT {$limit}",
         [
             'direction_client_user_id' => $clientUserId,
+            'inquiry_client_user_id' => $clientUserId,
             'recipient_client_user_id' => $clientUserId,
             'sender_client_user_id' => $clientUserId,
+        ]
+    );
+}
+
+function fetch_conversations_for_client(?int $clientUserId, int $limit = 50): array
+{
+    if ($clientUserId === null) {
+        return [];
+    }
+
+    $limit = max(1, min(200, $limit));
+
+    $rows = db_all(
+        "SELECT
+            i.id AS inquiry_id,
+            i.business_id,
+            COALESCE(bp.business_name, 'Business') AS business_name,
+            i.latest_subject,
+            i.latest_message,
+            i.status,
+            i.budget_amount,
+            i.updated_at
+        FROM inquiries i
+        LEFT JOIN business_profiles bp ON bp.id = i.business_id
+        WHERE i.client_user_id = :client_user_id
+        ORDER BY i.updated_at DESC, i.id DESC
+        LIMIT {$limit}",
+        ['client_user_id' => $clientUserId]
+    );
+
+    foreach ($rows as &$row) {
+        $row['status'] = strtolower((string) ($row['status'] ?? 'pending'));
+        $row['budget_amount'] = (float) ($row['budget_amount'] ?? 0);
+    }
+
+    return $rows;
+}
+
+function fetch_conversation_messages_for_client(?int $clientUserId, int $inquiryId, int $limit = 200): array
+{
+    if ($clientUserId === null || $inquiryId <= 0) {
+        return [];
+    }
+
+    $limit = max(1, min(300, $limit));
+
+    return db_all(
+        "SELECT
+            m.id,
+            m.sender_user_id,
+            m.recipient_user_id,
+            m.subject,
+            m.body,
+            m.message_status,
+            m.created_at,
+            i.business_id,
+            COALESCE(bp.business_name, 'Business') AS business_name
+        FROM messages m
+        LEFT JOIN inquiries i ON i.id = m.inquiry_id
+        LEFT JOIN business_profiles bp ON bp.id = i.business_id
+        WHERE m.inquiry_id = :inquiry_id
+          AND i.client_user_id = :client_user_id
+        ORDER BY m.created_at ASC, m.id ASC
+        LIMIT {$limit}",
+        [
+            'inquiry_id' => $inquiryId,
+            'client_user_id' => $clientUserId,
         ]
     );
 }
