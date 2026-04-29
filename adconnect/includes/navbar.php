@@ -8,6 +8,9 @@ $roleLabelMap = [
     'admin' => 'Admin',
 ];
 $activeRoleLabel = $roleLabelMap[$activeRole] ?? 'Guest';
+$notificationRole = $activeRole !== '' ? $activeRole : 'guest';
+$notificationUserId = $isAuthenticated ? current_user_id() : null;
+$navNotifications = fetch_notifications($notificationRole, $notificationUserId, 8);
 ?>
 <header class="topbar">
     <div class="container topbar-inner">
@@ -53,7 +56,7 @@ $activeRoleLabel = $roleLabelMap[$activeRole] ?? 'Guest';
                 <label class="sr-only" for="global-search">Search</label>
                 <input id="global-search" name="q" type="search" placeholder="Search businesses or ads">
             </form>
-            <button class="icon-button" type="button" data-notify="You have 3 new alerts waiting.">
+            <button class="icon-button" type="button" data-modal-target="alerts-modal" aria-haspopup="dialog" aria-controls="alerts-modal">
                 Alerts
             </button>
             <button class="icon-button" type="button" data-theme-toggle aria-pressed="false" aria-label="Enable night mode" title="Enable night mode">
@@ -62,3 +65,24 @@ $activeRoleLabel = $roleLabelMap[$activeRole] ?? 'Guest';
         </div>
     </div>
 </header>
+
+<div class="modal" data-modal="alerts-modal" aria-hidden="true" id="alerts-modal">
+    <div class="modal-card">
+        <div class="modal-head">
+            <h3>Alerts</h3>
+            <button class="btn-ghost" type="button" data-modal-close>Close</button>
+        </div>
+        <div class="notice-list">
+            <?php if (!$isAuthenticated): ?>
+                <article class="notice-item">Sign in to see personalized alerts.</article>
+            <?php else: ?>
+                <?php foreach ($navNotifications as $notification): ?>
+                    <?php echo render_notification_item($notification); ?>
+                <?php endforeach; ?>
+                <?php if (empty($navNotifications)): ?>
+                    <article class="notice-item">No alerts available right now.</article>
+                <?php endif; ?>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
