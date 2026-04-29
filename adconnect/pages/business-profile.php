@@ -286,7 +286,7 @@ require_once dirname(__DIR__) . '/includes/navbar.php';
                 <div class="form-grid full">
                     <div class="form-field">
                         <label for="contact-needs">Campaign Needs</label>
-                        <textarea id="contact-needs" name="campaign_needs" required data-minlength="20"><?php echo e($inquiryForm['campaign_needs']); ?></textarea>
+                        <textarea id="contact-needs" name="campaign_needs" required><?php echo e($inquiryForm['campaign_needs']); ?></textarea>
                         <small class="field-error" data-error-for="campaign_needs"></small>
                     </div>
                 </div>

@@ -10,7 +10,7 @@ $roleLabelMap = [
 $activeRoleLabel = $roleLabelMap[$activeRole] ?? 'Guest';
 $notificationRole = $activeRole !== '' ? $activeRole : 'guest';
 $notificationUserId = $isAuthenticated ? current_user_id() : null;
-$navNotifications = fetch_notifications($notificationRole, $notificationUserId, 8);
+$navNotifications = fetch_alerts_for_role($notificationRole, $notificationUserId, 8);
 ?>
 <header class="topbar">
     <div class="container topbar-inner">
@@ -66,13 +66,13 @@ $navNotifications = fetch_notifications($notificationRole, $notificationUserId, 
     </div>
 </header>
 
-<div class="modal" data-modal="alerts-modal" aria-hidden="true" id="alerts-modal">
+<div class="modal" data-modal="alerts-modal" data-alerts-endpoint="<?php echo e(url('pages/api/alerts.php')); ?>" aria-hidden="true" id="alerts-modal">
     <div class="modal-card">
         <div class="modal-head">
             <h3>Alerts</h3>
             <button class="btn-ghost" type="button" data-modal-close>Close</button>
         </div>
-        <div class="notice-list">
+        <div class="notice-list" data-alerts-list>
             <?php if (!$isAuthenticated): ?>
                 <article class="notice-item">Sign in to see personalized alerts.</article>
             <?php else: ?>

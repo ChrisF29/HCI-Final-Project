@@ -312,6 +312,126 @@ function fetch_notifications(string $role, ?int $userId = null, int $limit = 8):
     )));
 }
 
+function fetch_alerts_for_role(string $role, ?int $userId = null, int $limit = 8): array
+{
+    $role = strtolower($role);
+    $limit = max(1, min(20, $limit));
+
+    if ($userId === null || !in_array($role, ['client', 'business', 'admin'], true)) {
+        return [];
+    }
+
+    $alerts = [];
+
+    if ($role === 'admin') {
+        $pendingApprovals = db_count("SELECT COUNT(*) FROM business_profiles WHERE approval_status = 'pending'");
+        if ($pendingApprovals > 0) {
+            $alerts[] = 'You have ' . $pendingApprovals . ' business profile approvals pending.';
+        }
+
+        $openReports = db_count("SELECT COUNT(*) FROM reports WHERE status IN ('open', 'investigating')");
+        if ($openReports > 0) {
+            $alerts[] = 'There are ' . $openReports . ' reports awaiting review.';
+        }
+    }
+
+    if ($role === 'business') {
+        $businessId = (int) (db_value(
+            'SELECT id FROM business_profiles WHERE user_id = :user_id LIMIT 1',
+            ['user_id' => $userId]
+        ) ?? 0);
+
+        if ($businessId <= 0) {
+            $alerts[] = 'Complete your business profile to start receiving inquiries.';
+        } else {
+            $approvalStatus = strtolower((string) (db_value(
+                'SELECT approval_status FROM business_profiles WHERE id = :id LIMIT 1',
+                ['id' => $businessId]
+            ) ?? ''));
+
+            if ($approvalStatus === 'pending') {
+                $alerts[] = 'Your business profile is pending approval.';
+            } elseif ($approvalStatus === 'rejected') {
+                $alerts[] = 'Your business profile needs updates after rejection.';
+            }
+
+            $pendingInquiries = db_count(
+                "SELECT COUNT(*)
+                 FROM inquiries
+                 WHERE business_id = :business_id
+                   AND status = 'pending'",
+                ['business_id' => $businessId]
+            );
+            if ($pendingInquiries > 0) {
+                $alerts[] = $pendingInquiries . ' client inquiries are awaiting your reply.';
+            }
+
+            $scheduledInquiries = db_count(
+                "SELECT COUNT(*)
+                 FROM inquiries
+                 WHERE business_id = :business_id
+                   AND status = 'scheduled'",
+                ['business_id' => $businessId]
+            );
+            if ($scheduledInquiries > 0) {
+                $alerts[] = $scheduledInquiries . ' client meetings are scheduled.';
+            }
+
+            $unreadMessages = db_count(
+                "SELECT COUNT(*)
+                 FROM messages
+                 WHERE recipient_user_id = :recipient_user_id
+                   AND message_status IN ('open', 'pending')",
+                ['recipient_user_id' => $userId]
+            );
+            if ($unreadMessages > 0) {
+                $alerts[] = $unreadMessages . ' unread client messages.';
+            }
+        }
+    }
+
+    if ($role === 'client') {
+        $pendingInquiries = db_count(
+            "SELECT COUNT(*)
+             FROM inquiries
+             WHERE client_user_id = :client_user_id
+               AND status = 'pending'",
+            ['client_user_id' => $userId]
+        );
+        if ($pendingInquiries > 0) {
+            $alerts[] = $pendingInquiries . ' inquiries are awaiting business replies.';
+        }
+
+        $scheduledInquiries = db_count(
+            "SELECT COUNT(*)
+             FROM inquiries
+             WHERE client_user_id = :client_user_id
+               AND status = 'scheduled'",
+            ['client_user_id' => $userId]
+        );
+        if ($scheduledInquiries > 0) {
+            $alerts[] = $scheduledInquiries . ' meetings are scheduled with businesses.';
+        }
+
+        $unreadMessages = db_count(
+            "SELECT COUNT(*)
+             FROM messages
+             WHERE recipient_user_id = :recipient_user_id
+               AND message_status IN ('open', 'pending')",
+            ['recipient_user_id' => $userId]
+        );
+        if ($unreadMessages > 0) {
+            $alerts[] = $unreadMessages . ' unread business messages.';
+        }
+    }
+
+    if (count($alerts) > $limit) {
+        $alerts = array_slice($alerts, 0, $limit);
+    }
+
+    return $alerts;
+}
+
 function fetch_business_profile(?int $businessId): ?array
 {
     if ($businessId === null) {

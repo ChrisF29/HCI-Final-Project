@@ -411,7 +411,7 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                     <div class="form-grid full">
                         <div class="form-field">
                             <label for="msg-body">Message</label>
-                            <textarea id="msg-body" name="message_body" required data-minlength="15"><?php echo e($messageForm['message_body']); ?></textarea>
+                            <textarea id="msg-body" name="message_body" required><?php echo e($messageForm['message_body']); ?></textarea>
                             <small class="field-error" data-error-for="message_body"></small>
                         </div>
                     </div>
@@ -422,7 +422,7 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
     </div>
 </main>
 
-<div class="modal <?php echo $showChatModal ? 'is-open' : ''; ?>" data-modal="chat-modal" aria-hidden="<?php echo $showChatModal ? 'false' : 'true'; ?>">
+<div class="modal <?php echo $showChatModal ? 'is-open' : ''; ?>" data-modal="chat-modal" data-chat-endpoint="<?php echo e(url('pages/api/chat-messages.php')); ?>" data-chat-inquiry-id="<?php echo e((string) $activeConversationId); ?>" data-chat-meta-separator=" · " aria-hidden="<?php echo $showChatModal ? 'false' : 'true'; ?>">
     <div class="modal-card modal-chat">
         <div class="modal-head">
             <h3>Conversation</h3>
@@ -443,7 +443,7 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                 <span class="badge <?php echo e(badge_class_for_status($activeStatus)); ?>"><?php echo e($activeStatusLabel); ?></span>
             </div>
 
-            <div class="chat-thread">
+            <div class="chat-thread" data-chat-thread>
                 <?php foreach ($conversationMessages as $chatMessage): ?>
                     <?php
                     $isSent = (int) ($chatMessage['sender_user_id'] ?? 0) === (int) $clientUserId;
@@ -474,7 +474,7 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                 <input type="hidden" name="inquiry_id" value="<?php echo e((string) $activeConversationId); ?>">
                 <div class="form-field">
                     <label for="chat-message">Message</label>
-                    <textarea id="chat-message" name="message_body" required data-minlength="5"><?php echo e($chatForm['message_body']); ?></textarea>
+                    <textarea id="chat-message" name="message_body" required><?php echo e($chatForm['message_body']); ?></textarea>
                     <small class="field-error" data-error-for="message_body"></small>
                 </div>
                 <button class="btn" type="submit">Send message</button>

@@ -131,6 +131,227 @@
         });
     }
 
+    function fetchJson(url) {
+        return fetch(url, { credentials: 'same-origin' })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Request failed');
+                }
+                return response.json();
+            });
+    }
+
+    function renderNoticeItems(container, items, fallback) {
+        container.innerHTML = '';
+
+        if (!items || items.length === 0) {
+            const empty = document.createElement('article');
+            empty.className = 'notice-item';
+            empty.textContent = fallback;
+            container.appendChild(empty);
+            return;
+        }
+
+        items.forEach((item) => {
+            const notice = document.createElement('article');
+            notice.className = 'notice-item';
+            notice.textContent = item;
+            container.appendChild(notice);
+        });
+    }
+
+    function initAlertsPolling() {
+        const modal = selectOne('[data-modal="alerts-modal"]');
+        if (!modal) {
+            return;
+        }
+
+        const list = selectOne('[data-alerts-list]', modal);
+        const endpoint = modal.getAttribute('data-alerts-endpoint');
+        if (!list || !endpoint) {
+            return;
+        }
+
+        let timer = null;
+        const intervalMs = 2000;
+
+        const pollAlerts = () => {
+            fetchJson(endpoint)
+                .then((payload) => {
+                    if (!payload || !payload.ok) {
+                        const message = payload && payload.message ? payload.message : 'Unable to load alerts.';
+                        renderNoticeItems(list, [], message);
+                        return;
+                    }
+                    renderNoticeItems(list, payload.alerts || [], 'No alerts available right now.');
+                })
+                .catch(() => {
+                    renderNoticeItems(list, [], 'Unable to load alerts.');
+                });
+        };
+
+        const startPolling = () => {
+            if (timer) {
+                return;
+            }
+            pollAlerts();
+            timer = window.setInterval(pollAlerts, intervalMs);
+        };
+
+        const stopPolling = () => {
+            if (timer) {
+                window.clearInterval(timer);
+                timer = null;
+            }
+        };
+
+        selectAll('[data-modal-target="alerts-modal"]').forEach((trigger) => {
+            trigger.addEventListener('click', startPolling);
+        });
+
+        selectAll('[data-modal-close]', modal).forEach((closeBtn) => {
+            closeBtn.addEventListener('click', stopPolling);
+        });
+
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                stopPolling();
+            }
+        });
+
+        const observer = new MutationObserver(() => {
+            if (!modal.classList.contains('is-open')) {
+                stopPolling();
+            }
+        });
+        observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
+    }
+
+    function isNearBottom(element) {
+        const threshold = 40;
+        return element.scrollHeight - element.scrollTop - element.clientHeight < threshold;
+    }
+
+    function renderChatMessages(thread, messages, separator) {
+        const shouldScroll = isNearBottom(thread);
+        thread.innerHTML = '';
+
+        if (!messages || messages.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'notice-item';
+            empty.textContent = 'No messages yet. Start the conversation below.';
+            thread.appendChild(empty);
+            return;
+        }
+
+        messages.forEach((message) => {
+            const article = document.createElement('article');
+            article.className = `chat-bubble ${message.isSent ? 'is-sent' : 'is-received'}`;
+
+            const body = document.createElement('p');
+            body.textContent = message.body || '';
+            article.appendChild(body);
+
+            const meta = document.createElement('div');
+            meta.className = 'chat-meta';
+            const label = message.senderLabel || 'User';
+            const time = message.relativeTime || '';
+            meta.textContent = `${label}${separator}${time}`;
+            article.appendChild(meta);
+
+            thread.appendChild(article);
+        });
+
+        if (shouldScroll) {
+            thread.scrollTop = thread.scrollHeight;
+        }
+    }
+
+    function initChatPolling() {
+        const modals = selectAll('[data-chat-endpoint]');
+        if (modals.length === 0) {
+            return;
+        }
+
+        modals.forEach((modal) => {
+            const endpoint = modal.getAttribute('data-chat-endpoint');
+            const inquiryId = modal.getAttribute('data-chat-inquiry-id');
+            const separator = modal.getAttribute('data-chat-meta-separator') || ' · ';
+            const thread = selectOne('[data-chat-thread]', modal);
+            const modalId = modal.getAttribute('data-modal');
+
+            if (!endpoint || !inquiryId || !thread || !modalId) {
+                return;
+            }
+
+            let timer = null;
+            let lastMessageId = 0;
+            const intervalMs = 2000;
+
+            const pollMessages = () => {
+                const url = `${endpoint}?inquiry_id=${encodeURIComponent(inquiryId)}`;
+                fetchJson(url)
+                    .then((payload) => {
+                        if (!payload || !payload.ok) {
+                            return;
+                        }
+
+                        const items = payload.messages || [];
+                        const newestId = items.length > 0 ? items[items.length - 1].id : 0;
+                        if (newestId === lastMessageId && thread.childElementCount > 0) {
+                            return;
+                        }
+
+                        lastMessageId = newestId;
+                        renderChatMessages(thread, items, separator);
+                    })
+                    .catch(() => {
+                        return;
+                    });
+            };
+
+            const startPolling = () => {
+                if (timer) {
+                    return;
+                }
+                pollMessages();
+                timer = window.setInterval(pollMessages, intervalMs);
+            };
+
+            const stopPolling = () => {
+                if (timer) {
+                    window.clearInterval(timer);
+                    timer = null;
+                }
+            };
+
+            selectAll(`[data-modal-target="${modalId}"]`).forEach((trigger) => {
+                trigger.addEventListener('click', startPolling);
+            });
+
+            selectAll('[data-modal-close]', modal).forEach((closeBtn) => {
+                closeBtn.addEventListener('click', stopPolling);
+            });
+
+            modal.addEventListener('click', (event) => {
+                if (event.target === modal) {
+                    stopPolling();
+                }
+            });
+
+            const observer = new MutationObserver(() => {
+                if (!modal.classList.contains('is-open')) {
+                    stopPolling();
+                }
+            });
+            observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
+
+            if (modal.classList.contains('is-open')) {
+                startPolling();
+            }
+        });
+    }
+
     function applyTheme(theme) {
         const isNight = theme === 'night';
         document.body.classList.toggle('theme-night', isNight);
@@ -315,6 +536,8 @@
         initTabs();
         initModals();
         initNotificationTriggers();
+        initAlertsPolling();
+        initChatPolling();
         initThemeToggle();
         initForms();
         initRoleVisibility();

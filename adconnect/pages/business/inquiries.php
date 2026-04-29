@@ -265,7 +265,7 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
     </div>
 </main>
 
-<div class="modal <?php echo $showChatModal ? 'is-open' : ''; ?>" data-modal="chat-modal" aria-hidden="<?php echo $showChatModal ? 'false' : 'true'; ?>">
+<div class="modal <?php echo $showChatModal ? 'is-open' : ''; ?>" data-modal="chat-modal" data-chat-endpoint="<?php echo e(url('pages/api/chat-messages.php')); ?>" data-chat-inquiry-id="<?php echo e((string) $activeInquiryId); ?>" data-chat-meta-separator=" | " aria-hidden="<?php echo $showChatModal ? 'false' : 'true'; ?>">
     <div class="modal-card modal-chat">
         <div class="modal-head">
             <h3>Conversation</h3>
@@ -287,7 +287,7 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                 <span class="badge <?php echo e(badge_class_for_status($activeStatusKey)); ?>"><?php echo e($activeStatusLabel); ?></span>
             </div>
 
-            <div class="chat-thread">
+            <div class="chat-thread" data-chat-thread>
                 <?php foreach ($conversationMessages as $chatMessage): ?>
                     <?php
                     $isSent = (int) ($chatMessage['sender_user_id'] ?? 0) === (int) $businessUserId;
@@ -318,7 +318,7 @@ require_once dirname(__DIR__, 2) . '/includes/navbar.php';
                 <input type="hidden" name="reply_subject" value="<?php echo e($replyForm['reply_subject'] !== '' ? $replyForm['reply_subject'] : $activeSubject); ?>">
                 <div class="form-field">
                     <label for="reply-message">Message</label>
-                    <textarea id="reply-message" name="reply_message" required data-minlength="20"><?php echo e($replyForm['reply_message']); ?></textarea>
+                    <textarea id="reply-message" name="reply_message" required><?php echo e($replyForm['reply_message']); ?></textarea>
                     <small class="field-error" data-error-for="reply_message"></small>
                 </div>
                 <button class="btn" type="submit">Send Reply</button>
