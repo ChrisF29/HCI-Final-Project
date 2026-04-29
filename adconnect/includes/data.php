@@ -3,38 +3,40 @@ declare(strict_types=1);
 
 function active_client_user_id(): ?int
 {
-    $fromQuery = query_int('client_id') ?? query_int('user_id');
-    if ($fromQuery !== null) {
-        return $fromQuery;
+    $role = strtolower((string) ($_SESSION['role'] ?? 'guest'));
+    $currentUserId = current_user_id();
+
+    if ($currentUserId !== null && $role === 'client') {
+        return $currentUserId;
     }
 
-    $id = db_value(
-        "SELECT id
-         FROM users
-         WHERE role = 'client'
-         ORDER BY CASE WHEN status IN ('active', 'verified') THEN 0 ELSE 1 END, id ASC
-         LIMIT 1"
-    );
+    if ($role === 'admin') {
+        $fromQuery = query_int('client_id') ?? query_int('user_id');
+        if ($fromQuery !== null) {
+            return $fromQuery;
+        }
+    }
 
-    return $id !== null ? (int) $id : null;
+    return null;
 }
 
 function active_business_user_id(): ?int
 {
-    $fromQuery = query_int('business_user_id') ?? query_int('user_id');
-    if ($fromQuery !== null) {
-        return $fromQuery;
+    $role = strtolower((string) ($_SESSION['role'] ?? 'guest'));
+    $currentUserId = current_user_id();
+
+    if ($currentUserId !== null && $role === 'business') {
+        return $currentUserId;
     }
 
-    $id = db_value(
-        "SELECT id
-         FROM users
-         WHERE role = 'business'
-         ORDER BY CASE WHEN status IN ('active', 'verified') THEN 0 ELSE 1 END, id ASC
-         LIMIT 1"
-    );
+    if ($role === 'admin') {
+        $fromQuery = query_int('business_user_id') ?? query_int('user_id');
+        if ($fromQuery !== null) {
+            return $fromQuery;
+        }
+    }
 
-    return $id !== null ? (int) $id : null;
+    return null;
 }
 
 function active_business_profile_id(): ?int
@@ -44,15 +46,29 @@ function active_business_profile_id(): ?int
         return $fromQuery;
     }
 
-    $businessUserId = active_business_user_id();
-    if ($businessUserId !== null) {
+    $role = strtolower((string) ($_SESSION['role'] ?? 'guest'));
+    $currentUserId = current_user_id();
+
+    if ($role === 'business' && $currentUserId !== null) {
         $businessId = db_value(
             'SELECT id FROM business_profiles WHERE user_id = :user_id LIMIT 1',
-            ['user_id' => $businessUserId]
+            ['user_id' => $currentUserId]
         );
 
-        if ($businessId !== null) {
-            return (int) $businessId;
+        return $businessId !== null ? (int) $businessId : null;
+    }
+
+    if ($role === 'admin') {
+        $businessUserId = active_business_user_id();
+        if ($businessUserId !== null) {
+            $businessId = db_value(
+                'SELECT id FROM business_profiles WHERE user_id = :user_id LIMIT 1',
+                ['user_id' => $businessUserId]
+            );
+
+            if ($businessId !== null) {
+                return (int) $businessId;
+            }
         }
     }
 
